@@ -1,0 +1,8 @@
+*~
+*.o
+*.bak
+*.user
+build*
+*.so
+*.orig
+
