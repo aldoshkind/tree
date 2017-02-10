@@ -24,8 +24,9 @@ public:
 	property_get_set<node, double> latitude;
 	property_value_ptr<node, double> longitude;
 
-	/*constructor*/			node			() : latitude("latitude", this, &node::get_lat, &node::set_lat)
-												, longitude("longitude", this, &node::lon)
+	/*constructor*/			node			(const tree_node_t<node> *parent = NULL) : tree_node_t<node>(parent)
+																				, latitude("latitude", this, &node::get_lat, &node::set_lat)
+																				, longitude("longitude", this, &node::lon)
 	{
 		add_property(&latitude);
 		add_property(&longitude);
@@ -146,24 +147,24 @@ int main()
 	//node n;
 	//root["carrier"] = n;
 
-	root["carrier"].latitude.add_listener(&lat_listener);
-	root["carrier"].longitude.add_listener(&lon_listener);
-	root["carrier"].add_property(new property_value<double>("altitude"));
+	root["carrier"]->latitude.add_listener(&lat_listener);
+	root["carrier"]->longitude.add_listener(&lon_listener);
+	root["carrier"]->add_property(new property_value<double>("altitude"));
 
-	root["carrier"].latitude = 32.1;
-	root["carrier"].longitude = 84.55;
+	root["carrier"]->latitude = 32.1;
+	root["carrier"]->longitude = 84.55;
 
-	node &dummy = root["dummy"];
-	dummy.add_property(new property_value<double>("test"));
+	node *dummy = root["dummy"];
+	dummy->add_property(new property_value<double>("test"));
 
-	dummy.latitude = 7;
-	dummy.longitude = 99;
+	dummy->latitude = 7;
+	dummy->longitude = 99;
 
-	root["foo"].latitude = 45;
-	root["foo"].longitude = -5;
+	root["foo"]->latitude = 45;
+	root["foo"]->longitude = -5;
 
-	root["foo/bar"].latitude = 666;
-	root["foo/bar"].longitude = 667;
+	root["foo/bar"]->latitude = 666;
+	root["foo/bar"]->longitude = 667;
 
 	root.print("/root");
 

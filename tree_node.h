@@ -23,7 +23,7 @@ private:
 	const tree_node_t	*parent;
 	std::string			name;
 
-	typedef std::map<std::string, T>					children_map_t;
+	typedef std::map<std::string, T *>					children_map_t;
 	typedef typename children_map_t::value_type			child_item_t;
 	children_map_t										children;
 
@@ -39,16 +39,16 @@ public:
 	typedef std::vector<std::string>	ls_list_t;
 
 public:
-	/*constructor*/		tree_node_t		(/*const tree_node_t *parent = NULL*/);
+	/*constructor*/		tree_node_t		(const tree_node_t *parent = NULL);
 	virtual /*destructor*/~tree_node_t	();
 
-	T					&append			(std::string path);
+	T					*append			(std::string path);
 	int					remove			(std::string path, bool recursive = false);
 	int					get				(std::string path, const T *&node) const;
 
 	ls_list_t			ls				() const;
 
-	T					&operator []	(std::string path);
+	T					*operator []	(std::string path);
 
 	virtual void		print			(std::string name = "") const;
 
@@ -99,7 +99,7 @@ public:
 
 
 template <class T>
-/*constructor*/ tree_node_t<T>::tree_node_t(/*const tree_node_t<T> *parent*/)
+/*constructor*/ tree_node_t<T>::tree_node_t(const tree_node_t<T> *parent)
 {
 	//this->parent = parent;
 	this->parent = NULL;
@@ -115,7 +115,7 @@ template <class T>
 }
 
 template <class T>
-T &tree_node_t<T>::append(std::string path)
+T *tree_node_t<T>::append(std::string path)
 {
 	return this->operator [](path);
 }
@@ -160,12 +160,12 @@ void tree_node_t<T>::print(std::string name) const
 {
 	for(typename children_map_t::const_iterator it = children.begin() ; it != children.end() ; ++it)
 	{
-		it->second.print(name + '/' + it->first);
+		//it->second->print(name + '/' + it->first);
 	}
 }
 
 template <class T>
-T &tree_node_t<T>::operator [] (std::string path)
+T *tree_node_t<T>::operator [] (std::string path)
 {
 	if(path[0] == '/')
 	{
@@ -174,7 +174,7 @@ T &tree_node_t<T>::operator [] (std::string path)
 
 	if(path == "/" || path.size() == 0)
 	{
-		return *dynamic_cast<T*>(this);
+		return dynamic_cast<T*>(this);
 	}
 
 	std::string name, rest_of_path;
@@ -183,15 +183,15 @@ T &tree_node_t<T>::operator [] (std::string path)
 	typename children_map_t::const_iterator it = children.find(name);
 	if(it == children.end())
 	{
-		children[name].set_parent(this);
-		children[name].set_name(name);
+		children[name] = new T(this);
+		children[name]->set_name(name);
 
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
 			(*it)->child_added(this, name);
 		}
 	}
-	return children[name][rest_of_path];
+	return children[name]->operator[](rest_of_path);
 }
 
 template <class T>
