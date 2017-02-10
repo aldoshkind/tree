@@ -5,8 +5,6 @@
 #include <string>
 #include <typeinfo>
 
-class property_carrier;
-
 template <class value_t>
 class property;
 
@@ -124,24 +122,24 @@ protected:
 	}
 };
 
-template <class base_t, class value_t>
+template <class owner_t, class value_t>
 class property_get_set : public property<value_t>
 {
-	typedef void (base_t::*set_t)(value_t);
-	typedef value_t (base_t::*get_t)() const;
+	typedef void (owner_t::*set_t)(value_t);
+	typedef value_t (owner_t::*get_t)() const;
 
-	get_t get;
-	set_t set;
+	get_t					get;
+	set_t					set;
 
-	base_t					*base;
+	owner_t					*owner;
 
 public:
-	/*constructor*/			property_get_set			(std::string name, base_t *base, get_t g, set_t s) : property<value_t>(name)
+	/*constructor*/			property_get_set			(std::string name, owner_t *owner, get_t g, set_t s) : property<value_t>(name)
 	{
 		get = g;
 		set = s;
 
-		this->base = base;
+		this->owner = owner;
 	}
 
 	virtual /*destructor*/	~property_get_set			()
@@ -151,12 +149,12 @@ public:
 
 	value_t					get_value						() const
 	{
-		return (base->*get)();
+		return (owner->*get)();
 	}
 
 	void					set_value					(const value_t &v)
 	{
-		(base->*set)(v);
+		(owner->*set)(v);
 		property<value_t>::notify_change();
 	}
 
@@ -168,20 +166,20 @@ public:
 
 
 
-template <class base_t, class value_t>
+template <class owner_t, class value_t>
 class property_value_ptr : public property<value_t>
 {
-	typedef value_t base_t::* value_ptr;
+	typedef value_t owner_t::* value_ptr;
 
 	value_ptr				ptr;
 
-	base_t					*base;
+	owner_t					*owner;
 
 public:
-	/*constructor*/			property_value_ptr			(std::string name, base_t *base, value_ptr p) : property<value_t>(name)
+	/*constructor*/			property_value_ptr			(std::string name, owner_t *owner, value_ptr p) : property<value_t>(name)
 	{
 		ptr = p;
-		this->base = base;
+		this->owner = owner;
 	}
 
 	virtual /*destructor*/	~property_value_ptr			()
@@ -191,12 +189,12 @@ public:
 
 	value_t					get_value						() const
 	{
-		return base->*ptr;
+		return owner->*ptr;
 	}
 
 	void					set_value					(const value_t &v)
 	{
-		base->*ptr = v;
+		owner->*ptr = v;
 		property<value_t>::notify_change();
 	}
 
@@ -207,20 +205,55 @@ public:
 
 
 
-
-
-
-class property_carrier
+template <class value_t>
+class property_value : public property<value_t>
 {
-public:
-	typedef std::vector<property_base *>			props_t;
+	value_t					value;
 
-	/*constructor*/			property_carrier			()
+public:
+	/*constructor*/			property_value					(std::string name) : property<value_t>(name)
 	{
 		//
 	}
 
-	virtual /*destructor*/	~property_carrier			()
+	virtual /*destructor*/	~property_value					()
+	{
+		//
+	}
+
+	value_t					get_value						() const
+	{
+		return value;
+	}
+
+	void					set_value					(const value_t &v)
+	{
+		value = v;
+		property<value_t>::notify_change();
+	}
+
+	using property<value_t>::operator =;
+};
+
+
+
+template <class base_t>
+class resource
+{
+	/*constructor*/			resource			(const resource &)
+	{
+		//
+	}
+
+public:
+	typedef std::vector<property_base *>			props_t;
+
+	/*constructor*/			resource			()
+	{
+		//
+	}
+
+	virtual /*destructor*/	~resource			()
 	{
 		//
 	}
@@ -230,7 +263,6 @@ public:
 		return props;
 	}
 
-protected:
 	void					add_property				(property_base *p)
 	{
 		props.push_back(p);

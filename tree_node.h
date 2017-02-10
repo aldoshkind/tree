@@ -50,7 +50,7 @@ public:
 
 	T					&operator []	(std::string path);
 
-	void				print			(std::string name = "") const;
+	virtual void		print			(std::string name = "") const;
 
 	void				add_listener	(listener_t *);
 
@@ -158,11 +158,9 @@ int tree_node_t<T>::remove(std::string path, bool recursive)
 template <class T>
 void tree_node_t<T>::print(std::string name) const
 {
-	qDebug() << ((name == "") ? QString("/") : QString::fromStdString(name));
 	for(typename children_map_t::const_iterator it = children.begin() ; it != children.end() ; ++it)
 	{
 		it->second.print(name + '/' + it->first);
-		it->second.print_payload();
 	}
 }
 
@@ -185,7 +183,6 @@ T &tree_node_t<T>::operator [] (std::string path)
 	typename children_map_t::const_iterator it = children.find(name);
 	if(it == children.end())
 	{
-		//children[name] = T(this);
 		children[name].set_parent(this);
 		children[name].set_name(name);
 
@@ -259,4 +256,10 @@ template <class T>
 std::string tree_node_t<T>::get_name()
 {
 	return name == "" ? "/" : name;
+}
+
+template <class T>
+void tree_node_t<T>::set_parent(const tree_node_t *parent)
+{
+	this->parent = parent;
 }

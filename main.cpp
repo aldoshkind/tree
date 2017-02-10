@@ -5,25 +5,10 @@
 
 #include "property_system.h"
 
-class tn : public tree_node_t<tn>
-{
-public:
-	/*constructor*/				tn					(const tree_node_t<tn> *parent = NULL) : tree_node_t<tn>(parent)
-	{
-		//
-	}
-
-	/*destructor*/				~tn					()
-	{
-		//
-	}
-};
-
-class node : public property_carrier, public tree_node_t<node>
+class node : public resource<node>, public tree_node_t<node>
 {
 	double		lat;
 	double		lon;
-	double		alt;
 
 	double					get_lat			() const
 	{
@@ -39,9 +24,11 @@ public:
 	property_get_set<node, double> latitude;
 	property_value_ptr<node, double> longitude;
 
-	/*constructor*/			node			(const tree_node_t<node> *parent = NULL) : tree_node_t<node>(parent), latitude("latitude", this, &node::get_lat, &node::set_lat), longitude("longitude", this, &node::lon)
+	/*constructor*/			node			() : latitude("latitude", this, &node::get_lat, &node::set_lat)
+												, longitude("longitude", this, &node::lon)
 	{
 		add_property(&latitude);
+		add_property(&longitude);
 		latitude = 56.92335;
 		longitude = 92.6565;
 		printf("constructor %08X\n", this);
@@ -52,6 +39,8 @@ public:
 															, lat(n.latitude.get_value())
 															, lon(n.longitude.get_value())
 	{
+		add_property(&latitude);
+		add_property(&longitude);
 		printf("copy constructor %08X <- %08X\n", this, &n);
 	}
 
@@ -62,11 +51,21 @@ public:
 
 	using tree_node_t<node>::add_listener;
 
-	void					print_payload		() const
+	void					print			(std::string name = "") const
 	{
-		printf("%s = %f\n", latitude.get_name().c_str(), latitude.get_value());
-		printf("%s = %f\n", longitude.get_name().c_str(), longitude.get_value());
-		printf("payload %08X\n", this);
+		props_t props = get_properties();
+		for(props_t::size_type i = 0 ; i < props.size() ; i += 1)
+		{
+			property<double> *prop = dynamic_cast<property<double>* >(props[i]);
+			if(prop != NULL)
+			{
+				printf("%s.%s = %f (%s)\n", name.c_str(), prop->get_name().c_str(), prop->get_value(), prop->get_type().c_str());
+			}
+		}
+		tree_node_t<node>::print(name);
+		/*printf("%s.%s = %f\n", name.c_str(), latitude.get_name().c_str(), latitude.get_value());
+		printf("%s.%s = %f\n", name.c_str(), longitude.get_name().c_str(), longitude.get_value());
+		tree_node_t<node>::print(name);*/
 	}
 };
 
@@ -144,16 +143,18 @@ int main()
 	prop_change_printer lat_listener;
 	prop_change_printer lon_listener;
 
-	node n;
-	root["carrier"] = n;
+	//node n;
+	//root["carrier"] = n;
 
 	root["carrier"].latitude.add_listener(&lat_listener);
 	root["carrier"].longitude.add_listener(&lon_listener);
+	root["carrier"].add_property(new property_value<double>("altitude"));
 
 	root["carrier"].latitude = 32.1;
 	root["carrier"].longitude = 84.55;
 
 	node &dummy = root["dummy"];
+	dummy.add_property(new property_value<double>("test"));
 
 	dummy.latitude = 7;
 	dummy.longitude = 99;
@@ -161,8 +162,10 @@ int main()
 	root["foo"].latitude = 45;
 	root["foo"].longitude = -5;
 
+	root["foo/bar"].latitude = 666;
+	root["foo/bar"].longitude = 667;
 
-	root.print();
+	root.print("/root");
 
 	return 0;
 
