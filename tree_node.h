@@ -10,9 +10,6 @@
 
 #include "filepath_utils.h"
 
-/*template <class T>
-class tree_node_listener_t;*/
-
 template <class T>
 class tree_node_t
 {
@@ -54,7 +51,8 @@ public:
 
 	void				add_listener	(listener_t *);
 
-	std::string			get_name		();
+	std::string			get_name		() const;
+	std::string			get_path		() const;
 
 
 	class listener_t
@@ -70,7 +68,7 @@ public:
 			//
 		}
 
-		virtual void				child_added								(tree_node_t<T> *, std::string name)
+		virtual void				child_added								(tree_node_t<T> *)
 		{
 			//
 		}
@@ -101,8 +99,7 @@ public:
 template <class T>
 /*constructor*/ tree_node_t<T>::tree_node_t(const tree_node_t<T> *parent)
 {
-	//this->parent = parent;
-	this->parent = NULL;
+	this->parent = parent;
 }
 
 template <class T>
@@ -141,7 +138,7 @@ int tree_node_t<T>::remove(std::string path, bool recursive)
 	if(rest_of_path.size() == 0)
 	{
 		// если удаление рекурсивное, или потомок пустой - то удаляем, иначе ошибка
-		if(recursive || (children[name].is_empty() == true))
+		if(recursive || (children[name]->is_empty() == true))
 		{
 			children.erase(name);
 			for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
@@ -152,7 +149,7 @@ int tree_node_t<T>::remove(std::string path, bool recursive)
 		}
 	}
 
-	return children[name].remove(rest_of_path, recursive);
+	return children[name]->remove(rest_of_path, recursive);
 }
 
 template <class T>
@@ -188,7 +185,7 @@ T *tree_node_t<T>::operator [] (std::string path)
 
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
-			(*it)->child_added(this, name);
+			(*it)->child_added(children[name]);
 		}
 	}
 	return children[name]->operator[](rest_of_path);
@@ -253,9 +250,19 @@ void tree_node_t<T>::add_listener(listener_t *l)
 }
 
 template <class T>
-std::string tree_node_t<T>::get_name()
+std::string tree_node_t<T>::get_name() const
 {
-	return name == "" ? "/" : name;
+	return name;
+}
+
+template <class T>
+std::string tree_node_t<T>::get_path() const
+{
+	if(parent != NULL)
+	{
+		return parent->get_path() + "/" + get_name();
+	}
+	return "";//"/";
 }
 
 template <class T>

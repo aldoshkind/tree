@@ -19,4 +19,6 @@ SOURCES += main.cpp\
 HEADERS  += widget.h \
     filepath_utils.h \
     tree_node.h \
-    property_system.h
+    node.h \
+    resource.h \
+    event_printer.h

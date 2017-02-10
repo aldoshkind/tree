@@ -1,102 +1,7 @@
 #include "widget.h"
 #include <QApplication>
 
-#include "tree_node.h"
-
-#include "property_system.h"
-
-class node : public resource<node>, public tree_node_t<node>
-{
-	double		lat;
-	double		lon;
-
-	double					get_lat			() const
-	{
-		return lat;
-	}
-
-	void					set_lat			(double lat)
-	{
-		this->lat = lat;
-	}
-
-public:
-	property_get_set<node, double> latitude;
-	property_value_ptr<node, double> longitude;
-
-	/*constructor*/			node			(const tree_node_t<node> *parent = NULL) : tree_node_t<node>(parent)
-																				, latitude("latitude", this, &node::get_lat, &node::set_lat)
-																				, longitude("longitude", this, &node::lon)
-	{
-		add_property(&latitude);
-		add_property(&longitude);
-		latitude = 56.92335;
-		longitude = 92.6565;
-		printf("constructor %08X\n", this);
-	}
-
-	/*constructor*/			node			(const node &n) : latitude("latitude", this, &node::get_lat, &node::set_lat)
-															, longitude("longitude", this, &node::lon)
-															, lat(n.latitude.get_value())
-															, lon(n.longitude.get_value())
-	{
-		add_property(&latitude);
-		add_property(&longitude);
-		printf("copy constructor %08X <- %08X\n", this, &n);
-	}
-
-	/*destructor*/			~node			()
-	{
-		//
-	}
-
-	using tree_node_t<node>::add_listener;
-
-	void					print			(std::string name = "") const
-	{
-		props_t props = get_properties();
-		for(props_t::size_type i = 0 ; i < props.size() ; i += 1)
-		{
-			property<double> *prop = dynamic_cast<property<double>* >(props[i]);
-			if(prop != NULL)
-			{
-				printf("%s.%s = %f (%s)\n", name.c_str(), prop->get_name().c_str(), prop->get_value(), prop->get_type().c_str());
-			}
-		}
-		tree_node_t<node>::print(name);
-		/*printf("%s.%s = %f\n", name.c_str(), latitude.get_name().c_str(), latitude.get_value());
-		printf("%s.%s = %f\n", name.c_str(), longitude.get_name().c_str(), longitude.get_value());
-		tree_node_t<node>::print(name);*/
-	}
-};
-
-class event_printer : public node::listener_t
-{
-	void on_remove(tree_node_t<node> *n)
-	{
-		printf("\"%s\" removed\n", n->get_name().c_str());
-	}
-
-	void child_added(tree_node_t<node> *n, std::string name)
-	{
-		printf("\"%s\" added under \"%s\"\n", name.c_str(), n->get_name().c_str());
-	}
-
-	void child_removed(tree_node_t<node> *n, std::string name)
-	{
-		printf("\"%s\" removed under \"%s\"\n", name.c_str(), n->get_name().c_str());
-	}
-public:
-	/*constructor*/				event_printer		()
-	{
-		//
-	}
-
-	/*destructor*/				~event_printer		()
-	{
-		//
-	}
-};
+#include "event_printer.h"
 
 class prop_change_printer : public property_listener<double>
 {
@@ -117,35 +22,41 @@ public:
 	}
 };
 
-int main()
+int main(int argc, char *argv[])
 {
-	node root;
+	QApplication app(argc, argv);
+	Widget w;
+	w.show();
 
-	/*event_printer l;
+	event_printer l;
+
+	QObject::connect(&l, SIGNAL(signal_child_added(QString)), &w, SLOT(slot_add_item(QString)));
+	QObject::connect(&l, SIGNAL(signal_child_removed(QString)), &w, SLOT(slot_remove_item(QString)));
+
+	node root;
 
 	root.add_listener(&l);
 
-	node &a = root["a"];
+	node *a = root["a"];
 
-	a.add_listener(&l);
+	a->add_listener(&l);
 
-	node &b = a["b"];
-	node &c = a["c"]["/d/e/f"];
+	node *b = (*a)["b"];
+	b->add_listener(&l);
+	node *c = (*((*a)["c"]))["/d/e/f"];
+
+	b->append("bb");
 
 	root.print();
 
-
-	a.remove("b", true);
-	a.remove("c", true);
+	a->remove("b", true);
+	a->remove("c", true);
 	root.remove("a");
 
-	root.print();*/
+	root.print();
 
 	prop_change_printer lat_listener;
 	prop_change_printer lon_listener;
-
-	//node n;
-	//root["carrier"] = n;
 
 	root["carrier"]->latitude.add_listener(&lat_listener);
 	root["carrier"]->longitude.add_listener(&lon_listener);
@@ -166,13 +77,7 @@ int main()
 	root["foo/bar"]->latitude = 666;
 	root["foo/bar"]->longitude = 667;
 
-	root.print("/root");
+	root.print("/");
 
-	return 0;
-
-	/*QApplication a(argc, argv);
-	Widget w;
-	w.show();
-
-	return a.exec();*/
+	return app.exec();
 }
