@@ -14,7 +14,8 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         widget.cpp \
-    filepath_utils.cpp
+    filepath_utils.cpp \
+    resource.cpp
 
 HEADERS  += widget.h \
     filepath_utils.h \

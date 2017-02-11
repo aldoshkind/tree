@@ -3,7 +3,7 @@
 
 #include "event_printer.h"
 
-class prop_change_printer : public property_listener<double>
+class prop_change_printer : public property_listener
 {
 public:
 	/*constructor*/			prop_change_printer			()
@@ -18,7 +18,13 @@ public:
 
 	void					updated						()
 	{
-		printf("value %s changed %f\n", get_property()->get_name().c_str(), get_property()->get_value());
+		property_base *prop = get_property();
+		double val = 0;
+		if(prop->get_type() == "d")
+		{
+			val = dynamic_cast<property<double> *>(prop)->get_value();
+		}
+		printf("value %s of type %s changed %f\n", prop->get_name().c_str(), prop->get_type().c_str(), val);
 	}
 };
 
@@ -28,30 +34,28 @@ int main(int argc, char *argv[])
 	Widget w;
 	w.show();
 
-	event_printer l;
-
-	QObject::connect(&l, SIGNAL(signal_child_added(QString)), &w, SLOT(slot_add_item(QString)));
-	QObject::connect(&l, SIGNAL(signal_child_removed(QString)), &w, SLOT(slot_remove_item(QString)));
+	//event_printer l;
 
 	node root;
 
-	root.add_listener(&l);
+	w.set_tree(&root);
+
+	//root.add_listener(&l, true);
 
 	node *a = root["a"];
 
-	a->add_listener(&l);
+	//a->add_listener(&l, true);
 
 	node *b = (*a)["b"];
-	b->add_listener(&l);
-	node *c = (*((*a)["c"]))["/d/e/f"];
+	node *c = a->append("c/d/e/f");
 
 	b->append("bb");
 
 	root.print();
 
-	a->remove("b", true);
-	a->remove("c", true);
-	root.remove("a");
+	//a->remove("b", true);
+	//a->remove("c", true);
+	//root.remove("a");
 
 	root.print();
 
@@ -64,6 +68,7 @@ int main(int argc, char *argv[])
 
 	root["carrier"]->latitude = 32.1;
 	root["carrier"]->longitude = 84.55;
+	root["carrier/abc"]->longitude = 84.55;
 
 	node *dummy = root["dummy"];
 	dummy->add_property(new property_value<double>("test"));

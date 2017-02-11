@@ -7,11 +7,16 @@
 Widget::Widget(QWidget *parent)
 	: QWidget(parent)
 {
-	layout_main = new QVBoxLayout(this);
+	layout_main = new QHBoxLayout(this);
+	layout_props = new QVBoxLayout();
 
 	tree = new QTreeWidget(this);
 
-	layout_main->addWidget(tree);
+	layout_main->addWidget(tree, 1);
+	layout_main->addLayout(layout_props, 1);
+
+	connect(this, SIGNAL(signal_child_added(QString)), this, SLOT(slot_add_item(QString)));
+	connect(this, SIGNAL(signal_child_removed(QString)), this, SLOT(slot_remove_item(QString)));
 }
 
 Widget::~Widget()
@@ -74,28 +79,35 @@ void Widget::slot_remove_item(QString path)
 
 	QStringList pts = path.split('/', QString::SkipEmptyParts);
 	QString cur_path;
-	QTreeWidgetItem *parent = NULL;
+	QTreeWidgetItem *item = NULL;
 	for(int i = 0 ; i < pts.size() ; i += 1)
 	{
 		cur_path += "/" + pts[i];
 		if(path_to_item_map.find(cur_path) != path_to_item_map.end())
 		{
-			parent = path_to_item_map[cur_path];
+			item = path_to_item_map[cur_path];
 			if(i == (pts.size() - 1))
 			{
-				delete parent;
-				/*if(parent->parent() != NULL)
-				{
-					parent->parent()->removeChild(parent);
-				}
-				else
-				{
-					delete
-				}*/
+				delete item;
 			}
 
 			continue;
 		}
 	}
 
+}
+
+void Widget::set_tree(node *n)
+{
+	n->add_listener(this, true);
+}
+
+void Widget::child_added(node *n)
+{
+	emit signal_child_added(QString::fromStdString(n->get_path()));
+}
+
+void Widget::child_removed(node *n, std::string name)
+{
+	emit signal_child_removed(QString::fromStdString(n->get_path() + "/" + name));
 }

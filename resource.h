@@ -5,27 +5,27 @@
 #include <string>
 #include <typeinfo>
 
+class property_base;
+
 template <class value_t>
 class property;
 
-template <class value_t>
 class property_listener
 {
-	typedef property<value_t>		prop_t;
-	prop_t							*prop;
+	property_base					*prop;
 
 public:
-	/*constructor*/			property_listener			();
-	virtual /*destructor*/	~property_listener			();
+	/*constructor*/					property_listener			();
+	virtual /*destructor*/			~property_listener			();
 
-	void					set_property				(prop_t *p)
+	void							set_property				(property_base *p)
 	{
 		prop = p;
 	}
 
-	virtual void			updated						() = 0;
+	virtual void					updated						() = 0;
 
-	prop_t					*get_property				() const
+	property_base					*get_property				() const
 	{
 		return prop;
 	}
@@ -33,34 +33,19 @@ public:
 
 class property_base
 {
+	typedef std::set<property_listener *>	listeners_t;
+	listeners_t								listeners;
+
+	std::string					name;
+	std::string					type;
+
 public:
-	/*constructor*/			property_base				()
+	/*constructor*/			property_base				(std::string n) : name(n)
 	{
 		//
 	}
 
 	virtual /*destructor*/	~property_base				()
-	{
-		//
-	}
-};
-
-template <class value_t>
-class property : public property_base
-{
-	typedef property_listener<value_t>		listener_t;
-	typedef std::set<listener_t *>			listeners_t;
-	listeners_t								listeners;
-
-	std::string					name;
-
-public:
-	/*constructor*/			property					(std::string n) : name(n)
-	{
-		//
-	}
-
-	virtual /*destructor*/	~property					()
 	{
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
@@ -68,17 +53,56 @@ public:
 		}
 	}
 
-	void					add_listener				(listener_t *l)
+	void					add_listener				(property_listener *l)
 	{
 		listeners.insert(l);
 		l->set_property(this);
 		l->updated();
 	}
 
-	void					remove_listener				(listener_t *l)
+	void					remove_listener				(property_listener *l)
 	{
 		listeners.erase(l);
 		l->set_property(NULL);
+	}
+
+	std::string				get_name					() const
+	{
+		return name;
+	}
+
+	std::string				get_type					() const
+	{
+		return type;
+	}
+
+protected:
+	void					set_type					(std::string type)
+	{
+		this->type = type;
+	}
+
+	void					notify_change				()
+	{
+		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+		{
+			(*it)->updated();
+		}
+	}
+};
+
+template <class value_t>
+class property : public property_base
+{
+public:
+	/*constructor*/			property					(std::string n) : property_base(n)
+	{
+		//
+	}
+
+	virtual /*destructor*/	~property					()
+	{
+		//
 	}
 
 	virtual value_t			get_value						() const
@@ -91,17 +115,12 @@ public:
 		notify_change();
 	}
 
-	std::string				get_name					() const
-	{
-		return name;
-	}
-
 	virtual void			value_changed				()
 	{
 		notify_change();
 	}
 
-	std::string				get_type					()
+	std::string				get_type					() const
 	{
 		return typeid(value_t).name();
 	}
@@ -110,15 +129,6 @@ public:
 	{
 		set_value(v);
 		return *this;
-	}
-
-protected:
-	void					notify_change				()
-	{
-		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
-		{
-			(*it)->updated();
-		}
 	}
 };
 
@@ -246,7 +256,7 @@ class resource
 	}
 
 public:
-	typedef std::vector<property_base *>			props_t;
+	typedef std::vector<property_base *>		props_t;
 
 	/*constructor*/			resource			()
 	{
@@ -271,19 +281,3 @@ public:
 private:
 	props_t					props;
 };
-
-
-template <class value_t>
-/*constructor*/ property_listener<value_t>::property_listener() : prop(NULL)
-{
-	//
-}
-
-template <class value_t>
-/*destructor*/ property_listener<value_t>::~property_listener()
-{
-	if(prop != NULL)
-	{
-		prop->remove_listener(this);
-	}
-}

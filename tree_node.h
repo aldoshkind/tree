@@ -26,11 +26,14 @@ private:
 
 	typedef std::set<listener_t *>						listeners_t;
 	listeners_t											listeners;
+	listeners_t											recursive_listeners;
 
 	bool				is_empty		() const;
 	void				set_name		(std::string name);
 
 	void				set_parent		(const tree_node_t *parent);
+
+	T					*get			(std::string path, bool create);
 
 public:
 	typedef std::vector<std::string>	ls_list_t;
@@ -40,8 +43,9 @@ public:
 	virtual /*destructor*/~tree_node_t	();
 
 	T					*append			(std::string path);
+	T					*at				(std::string path);
 	int					remove			(std::string path, bool recursive = false);
-	int					get				(std::string path, const T *&node) const;
+	//int					get				(std::string path, const T *&node) const;
 
 	ls_list_t			ls				() const;
 
@@ -49,7 +53,7 @@ public:
 
 	virtual void		print			(std::string name = "") const;
 
-	void				add_listener	(listener_t *);
+	void				add_listener	(listener_t *, bool recursive = false);
 
 	std::string			get_name		() const;
 	std::string			get_path		() const;
@@ -68,17 +72,17 @@ public:
 			//
 		}
 
-		virtual void				child_added								(tree_node_t<T> *)
+		virtual void				child_added								(T *)
 		{
 			//
 		}
 
-		virtual void				child_removed							(tree_node_t<T> *, std::string name)
+		virtual void				child_removed							(T *, std::string name)
 		{
 			//
 		}
 
-		virtual void				on_remove								(tree_node_t<T> *)
+		virtual void				on_remove								(T *)
 		{
 			//
 		}
@@ -107,14 +111,63 @@ template <class T>
 {
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
-		(*it)->on_remove(this);
+		(*it)->on_remove(dynamic_cast<T *>(this));
+	}
+	for(typename children_map_t::iterator it = children.begin() ; it != children.end() ; ++it)
+	{
+		delete it->second;
 	}
 }
 
 template <class T>
 T *tree_node_t<T>::append(std::string path)
 {
-	return this->operator [](path);
+	return get(path, true);
+}
+
+template <class T>
+T *tree_node_t<T>::at(std::string path)
+{
+	return get(path, true);
+}
+
+template <class T>
+T *tree_node_t<T>::get(std::string path, bool create)
+{
+	if(path[0] == '/')
+	{
+		path = path.substr(1);
+	}
+
+	if(path == "/" || path.size() == 0)
+	{
+		return dynamic_cast<T*>(this);
+	}
+
+	std::string name, rest_of_path;
+	extract_next_level_name(path, name, rest_of_path);
+
+	typename children_map_t::const_iterator it = children.find(name);
+	if(it == children.end())
+	{
+		if(create == false)
+		{
+			return NULL;
+		}
+		children[name] = new T(this);
+		children[name]->set_name(name);
+
+		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+		{
+			(*it)->child_added(children[name]);
+		}
+
+		for(typename listeners_t::iterator it = recursive_listeners.begin() ; it != recursive_listeners.end() ; ++it)
+		{
+			children[name]->add_listener(*it, true);
+		}
+	}
+	return children[name]->operator[](rest_of_path);
 }
 
 template <class T>
@@ -157,38 +210,14 @@ void tree_node_t<T>::print(std::string name) const
 {
 	for(typename children_map_t::const_iterator it = children.begin() ; it != children.end() ; ++it)
 	{
-		//it->second->print(name + '/' + it->first);
+		it->second->print(name + '/' + it->first);
 	}
 }
 
 template <class T>
 T *tree_node_t<T>::operator [] (std::string path)
 {
-	if(path[0] == '/')
-	{
-		path = path.substr(1);
-	}
-
-	if(path == "/" || path.size() == 0)
-	{
-		return dynamic_cast<T*>(this);
-	}
-
-	std::string name, rest_of_path;
-	extract_next_level_name(path, name, rest_of_path);
-
-	typename children_map_t::const_iterator it = children.find(name);
-	if(it == children.end())
-	{
-		children[name] = new T(this);
-		children[name]->set_name(name);
-
-		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
-		{
-			(*it)->child_added(children[name]);
-		}
-	}
-	return children[name]->operator[](rest_of_path);
+	return get(path, true);
 }
 
 template <class T>
@@ -211,42 +240,27 @@ typename tree_node_t<T>::ls_list_t tree_node_t<T>::ls() const
 }
 
 template <class T>
-int tree_node_t<T>::get(std::string path, const T *&node) const
-{
-	if(path[0] == '/')
-	{
-		path = path.substr(1);
-	}
-
-	std::string name, rest_of_path;
-	extract_next_level_name(path, name, rest_of_path);
-
-	// если нет такого потомка, то ошибка
-	if(children.find(name) == children.end())
-	{
-		return -1;
-	}
-
-	// если потомок есть, и остальной путь пуст - то возвращать потомка
-	if(rest_of_path.size() == 0)
-	{
-		node = &children.at(name);
-		return 0;
-	}
-
-	return children.at(name).get(rest_of_path, node);
-}
-
-template <class T>
 void tree_node_t<T>::set_name(std::string n)
 {
 	name = n;
 }
 
 template <class T>
-void tree_node_t<T>::add_listener(listener_t *l)
+void tree_node_t<T>::add_listener(listener_t *l, bool recursive)
 {
 	listeners.insert(l);
+	if(recursive == true)
+	{
+		recursive_listeners.insert(l);
+	}
+	for(typename children_map_t::iterator it = children.begin() ; it != children.end() ; ++it)
+	{
+		l->child_added(it->second);
+		if(recursive == true)
+		{
+			it->second->add_listener(l, recursive);
+		}
+	}
 }
 
 template <class T>

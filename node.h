@@ -18,7 +18,9 @@ class node : public resource<node>, public tree_node_t<node>
 		this->lat = lat;
 	}
 
-	/*constructor*/			node			(const node &n) : latitude("latitude", this, &node::get_lat, &node::set_lat)
+	/*constructor*/			node			(const node &n) : resource<node>()
+															, tree_node_t<node>()
+															, latitude("latitude", this, &node::get_lat, &node::set_lat)
 															, longitude("longitude", this, &node::lon)
 															, lat(n.latitude.get_value())
 															, lon(n.longitude.get_value())
@@ -50,7 +52,7 @@ public:
 
 	using tree_node_t<node>::add_listener;
 
-	void					print			(std::string name = "") const
+	/*void					print			(std::string name = "") const
 	{
 		props_t props = get_properties();
 		for(props_t::size_type i = 0 ; i < props.size() ; i += 1)
@@ -62,5 +64,5 @@ public:
 			}
 		}
 		tree_node_t<node>::print(name);
-	}
+	}*/
 };
