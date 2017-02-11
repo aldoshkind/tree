@@ -3,7 +3,7 @@
 #include "resource.h"
 #include "tree_node.h"
 
-class node : public resource<node>, public tree_node_t<node>
+class node : public resource, public tree_node_t<node>
 {
 	double		lat;
 	double		lon;
@@ -18,7 +18,7 @@ class node : public resource<node>, public tree_node_t<node>
 		this->lat = lat;
 	}
 
-	/*constructor*/			node			(const node &n) : resource<node>()
+	/*constructor*/			node			(const node &n) : resource()
 															, tree_node_t<node>()
 															, latitude("latitude", this, &node::get_lat, &node::set_lat)
 															, longitude("longitude", this, &node::lon)

@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include <QLabel>
+
 #include "filepath_utils.h"
 
 Widget::Widget(QWidget *parent)
@@ -17,6 +19,7 @@ Widget::Widget(QWidget *parent)
 
 	connect(this, SIGNAL(signal_child_added(QString)), this, SLOT(slot_add_item(QString)));
 	connect(this, SIGNAL(signal_child_removed(QString)), this, SLOT(slot_remove_item(QString)));
+	connect(tree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(slot_item_clicked(QTreeWidgetItem*,int)));
 }
 
 Widget::~Widget()
@@ -100,6 +103,7 @@ void Widget::slot_remove_item(QString path)
 void Widget::set_tree(node *n)
 {
 	n->add_listener(this, true);
+	root = n;
 }
 
 void Widget::child_added(node *n)
@@ -110,4 +114,48 @@ void Widget::child_added(node *n)
 void Widget::child_removed(node *n, std::string name)
 {
 	emit signal_child_removed(QString::fromStdString(n->get_path() + "/" + name));
+}
+
+void Widget::new_property(resource *r, property_base *p)
+{
+	node *n = dynamic_cast<node *>(r);
+	if(n == NULL)
+	{
+		return;
+	}
+
+	if(p->get_type() == "d")
+	{
+		QLabel *l = new QLabel(QString("double ") + QString::fromStdString(n->get_name() + "/" + p->get_name()) + ";");
+		layout_props->addWidget(l);
+	}
+}
+
+void Widget::slot_item_clicked(QTreeWidgetItem *it, int)
+{
+	QLayoutItem *item = NULL;
+	while((item = layout_props->takeAt(0)) != NULL)
+	{
+		delete item->widget();
+		delete item;
+	}
+	unsubscribe();
+
+	QString path;
+	for( ; ; )
+	{
+		path = it->text(0) + "/" + path;
+		if(it->parent() == NULL)
+		{
+			break;
+		}
+		it = it->parent();
+	}
+
+	node *n = root->at(path.toStdString());
+	if(n == NULL)
+	{
+		return;
+	}
+	n->resource::add_listener(this);
 }

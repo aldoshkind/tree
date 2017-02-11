@@ -9,7 +9,7 @@
 
 #include "node.h"
 
-class Widget : public QWidget, public node::listener_t
+class Widget : public QWidget, public node::listener_t, public resource::new_property_listener
 {
 	Q_OBJECT
 
@@ -22,6 +22,9 @@ class Widget : public QWidget, public node::listener_t
 
 	void				child_added				(node *);
 	void				child_removed			(node *, std::string name);
+	void				new_property			(resource *, property_base *);
+
+	node				*root;
 
 public:
 	Widget(QWidget *parent = 0);
@@ -32,6 +35,7 @@ public:
 public slots:
 	void				slot_add_item			(QString path);
 	void				slot_remove_item		(QString path);
+	void				slot_item_clicked		(QTreeWidgetItem*, int);
 
 signals:
 	void				signal_child_added		(QString path);

@@ -97,7 +97,7 @@ class property : public property_base
 public:
 	/*constructor*/			property					(std::string n) : property_base(n)
 	{
-		//
+		set_type(typeid(value_t).name());
 	}
 
 	virtual /*destructor*/	~property					()
@@ -105,7 +105,7 @@ public:
 		//
 	}
 
-	virtual value_t			get_value						() const
+	virtual value_t			get_value					() const
 	{
 		return value_t();
 	}
@@ -118,11 +118,6 @@ public:
 	virtual void			value_changed				()
 	{
 		notify_change();
-	}
-
-	std::string				get_type					() const
-	{
-		return typeid(value_t).name();
 	}
 
 	property				&operator =					(const value_t &v)
@@ -247,9 +242,15 @@ public:
 
 
 
-template <class base_t>
 class resource
 {
+public:
+	class new_property_listener;
+private:
+
+	typedef std::set<new_property_listener *>	listeners_t;
+	listeners_t									listeners;
+
 	/*constructor*/			resource			(const resource &)
 	{
 		//
@@ -258,6 +259,53 @@ class resource
 public:
 	typedef std::vector<property_base *>		props_t;
 
+	class new_property_listener
+	{
+		typedef std::set<resource *>		resources_t;
+		resources_t							resources;
+	public:
+		/*constructor*/			new_property_listener			()
+		{
+			//
+		}
+
+		virtual /*destructor*/	~new_property_listener			()
+		{
+			for(resources_t::iterator it = resources.begin() ; it != resources.end() ; ++it)
+			{
+				(*it)->remove_listener(this);
+			}
+		}
+
+		void					remove_resource					(resource *r)
+		{
+			resources.erase(r);
+		}
+
+		void					add_resource					(resource *r)
+		{
+			resources.insert(r);
+		}
+
+		virtual void			new_property					(resource *r, property_base *) = 0;
+		void					unsubscribe						(resource *r = NULL)
+		{
+			if(r == NULL)
+			{
+				for(resources_t::iterator it = resources.begin() ; it != resources.end() ; ++it)
+				{
+					(*it)->remove_listener(this);
+				}
+				resources.clear();
+			}
+			else
+			{
+				r->remove_listener(this);
+				resources.erase(r);
+			}
+		}
+	};
+
 	/*constructor*/			resource			()
 	{
 		//
@@ -265,7 +313,24 @@ public:
 
 	virtual /*destructor*/	~resource			()
 	{
-		//
+		for(listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+		{
+			(*it)->remove_resource(this);
+		}
+	}
+
+	void					remove_listener		(new_property_listener *l)
+	{
+		listeners.erase(l);
+	}
+
+	void					add_listener		(new_property_listener *l)
+	{
+		listeners.insert(l);
+		for(props_t::size_type i = 0 ; i < props.size() ; i += 1)
+		{
+			l->new_property(this, props[i]);
+		}
 	}
 
 	props_t					get_properties				() const
@@ -276,6 +341,10 @@ public:
 	void					add_property				(property_base *p)
 	{
 		props.push_back(p);
+		for(listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+		{
+			(*it)->new_property(this, p);
+		}
 	}
 
 private:
