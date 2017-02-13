@@ -193,10 +193,11 @@ int tree_node_t<T>::remove(std::string path, bool recursive)
 		// если удаление рекурсивное, или потомок пустой - то удаляем, иначе ошибка
 		if(recursive || (children[name]->is_empty() == true))
 		{
+			delete children[name];
 			children.erase(name);
 			for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 			{
-				(*it)->child_removed(this, name);
+				(*it)->child_removed(dynamic_cast<T *>(this), name);
 			}
 			return 0;
 		}

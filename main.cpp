@@ -72,6 +72,9 @@ int main(int argc, char *argv[])
 
 	node *dummy = root["dummy"];
 	dummy->add_property(new property_value<double>("test"));
+	property_value<std::string> *str_test = new property_value<std::string>("str_test");
+	dummy->add_property(str_test);
+	*str_test = "lol";
 
 	dummy->latitude = 7;
 	dummy->longitude = 99;

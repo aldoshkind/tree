@@ -2,9 +2,26 @@
 
 #include <stdio.h>
 
+#include <cxxabi.h>
+
 #include <QLabel>
 
 #include "filepath_utils.h"
+
+static std::string demangle(std::string name)
+{
+	std::string res = std::string("error demagling type ") + "(" + name + ")";
+
+	int status = -1;
+	char *ret = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
+	if(ret != NULL)
+	{
+		res = std::string(ret);
+	}
+	free(ret);
+
+	return res;
+}
 
 Widget::Widget(QWidget *parent)
 	: QWidget(parent)
@@ -124,11 +141,8 @@ void Widget::new_property(resource *r, property_base *p)
 		return;
 	}
 
-	if(p->get_type() == "d")
-	{
-		QLabel *l = new QLabel(QString("double ") + QString::fromStdString(n->get_name() + "/" + p->get_name()) + ";");
-		layout_props->addWidget(l);
-	}
+	QLabel *l = new QLabel(QString::fromStdString(demangle(p->get_type())) + " " + QString::fromStdString(n->get_name() + "/" + p->get_name()) + ";");
+	layout_props->addWidget(l);
 }
 
 void Widget::slot_item_clicked(QTreeWidgetItem *it, int)

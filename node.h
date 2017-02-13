@@ -27,7 +27,7 @@ class node : public resource, public tree_node_t<node>
 	{
 		add_property(&latitude);
 		add_property(&longitude);
-		printf("copy constructor %08X <- %08X\n", this, &n);
+		//printf("copy constructor %08X <- %08X\n", this, &n);
 	}
 
 public:
@@ -42,7 +42,7 @@ public:
 		add_property(&longitude);
 		latitude = 56.92335;
 		longitude = 92.6565;
-		printf("constructor %08X\n", this);
+		//printf("constructor %08X\n", this);
 	}
 
 	/*destructor*/			~node			()
