@@ -28,6 +28,21 @@ public:
 	}
 };
 
+class extended_node : public node
+{
+	double fuel_val;
+public:
+	property_value_ptr<extended_node, double> fuel;
+	property_value<std::string> message;
+
+	/*constructor*/				extended_node				(node *parent = NULL) : node(parent), fuel("fuel", this, &extended_node::fuel_val), message("message")
+	{
+		add_property(&fuel);
+		add_property(&message);
+	}
+	/*destructor*/				~extended_node				() {}
+};
+
 int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
@@ -69,6 +84,9 @@ int main(int argc, char *argv[])
 	root["carrier"]->latitude = 32.1;
 	root["carrier"]->longitude = 84.55;
 	root["carrier/abc"]->longitude = 84.55;
+
+	root.append("/test/lol/n", new node);
+	root.append("/test/lol/ext", new extended_node);
 
 	node *dummy = root["dummy"];
 	dummy->add_property(new property_value<double>("test"));

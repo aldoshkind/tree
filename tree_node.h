@@ -34,6 +34,7 @@ private:
 	void				set_parent		(const tree_node_t *parent);
 
 	T					*get			(std::string path, bool create);
+	void				insert			(std::string name, T *obj);
 
 public:
 	typedef std::vector<std::string>	ls_list_t;
@@ -43,6 +44,7 @@ public:
 	virtual /*destructor*/~tree_node_t	();
 
 	T					*append			(std::string path);
+	T					*append			(std::string path, T *obj);
 	T					*at				(std::string path);
 	int					remove			(std::string path, bool recursive = false);
 	//int					get				(std::string path, const T *&node) const;
@@ -126,6 +128,50 @@ T *tree_node_t<T>::append(std::string path)
 }
 
 template <class T>
+void tree_node_t<T>::insert(std::string name, T *obj)
+{
+	children[name] = obj;
+	obj->set_parent(this);
+	obj->set_name(name);
+
+	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+	{
+		(*it)->child_added(obj);
+	}
+
+	for(typename listeners_t::iterator it = recursive_listeners.begin() ; it != recursive_listeners.end() ; ++it)
+	{
+		obj->add_listener(*it, true);
+	}
+}
+
+template <class T>
+T *tree_node_t<T>::append(std::string path, T *obj)
+{
+	if(obj == NULL)
+	{
+		return NULL;
+	}
+
+	std::string branch, name;
+	extract_last_level_name(path, branch, name);
+	T *par = get(branch, true);
+	if(par == NULL)
+	{
+		return NULL;
+	}
+
+	T *item = par->get(name, false);
+	if(item == NULL)
+	{
+		par->insert(name, obj);
+		item = obj;
+	}
+
+	return item;
+}
+
+template <class T>
 T *tree_node_t<T>::at(std::string path)
 {
 	return get(path, true);
@@ -154,18 +200,8 @@ T *tree_node_t<T>::get(std::string path, bool create)
 		{
 			return NULL;
 		}
-		children[name] = new T(this);
-		children[name]->set_name(name);
 
-		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
-		{
-			(*it)->child_added(children[name]);
-		}
-
-		for(typename listeners_t::iterator it = recursive_listeners.begin() ; it != recursive_listeners.end() ; ++it)
-		{
-			children[name]->add_listener(*it, true);
-		}
+		insert(name, new T(this));
 	}
 	return children[name]->operator[](rest_of_path);
 }

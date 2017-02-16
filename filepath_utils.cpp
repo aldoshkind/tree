@@ -16,6 +16,19 @@ int extract_next_level_name(std::string path, std::string &name, std::string &ne
 	return 0;
 }
 
+int extract_last_level_name(std::string path, std::string &start, std::string &last)
+{
+	size_t name_end_pos = path.find_last_of('/');
+	if(name_end_pos == std::string::npos)
+	{
+		start = path;
+		return 0;
+	}
+	start = path.substr(0, name_end_pos);
+	last = path.substr(name_end_pos + 1);
+	return 0;
+}
+
 int clean_path(char *path)
 {
 	int path_len = strlen(path);
