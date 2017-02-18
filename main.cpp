@@ -1,7 +1,8 @@
-#include "widget.h"
 #include <QApplication>
 
+#include "widget.h"
 #include "event_printer.h"
+#include "sinus_generator.h"
 
 class prop_change_printer : public property_listener
 {
@@ -49,18 +50,11 @@ int main(int argc, char *argv[])
 	Widget w;
 	w.show();
 
-	//event_printer l;
-
 	node root;
 
 	w.set_tree(&root);
 
-	//root.add_listener(&l, true);
-
 	node *a = root["a"];
-
-	//a->add_listener(&l, true);
-
 	node *b = (*a)["b"];
 	node *c = a->append("c/d/e/f");
 
@@ -87,6 +81,7 @@ int main(int argc, char *argv[])
 
 	root.append("/test/lol/n", new node);
 	root.append("/test/lol/ext", new extended_node);
+	root.append("/synthetic/sin", new sinus_generator);
 
 	node *dummy = root["dummy"];
 	dummy->add_property(new property_value<double>("test"));

@@ -18,11 +18,7 @@ public:
 	/*constructor*/					property_listener			();
 	virtual /*destructor*/			~property_listener			();
 
-	void							set_property				(property_base *p)
-	{
-		prop = p;
-	}
-
+	void							set_property				(property_base *p);
 	virtual void					updated						() = 0;
 
 	property_base					*get_property				() const
@@ -63,7 +59,7 @@ public:
 	void					remove_listener				(property_listener *l)
 	{
 		listeners.erase(l);
-		l->set_property(NULL);
+		//l->set_property(NULL);
 	}
 
 	std::string				get_name					() const

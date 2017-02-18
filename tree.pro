@@ -22,4 +22,5 @@ HEADERS  += widget.h \
     tree_node.h \
     node.h \
     resource.h \
-    event_printer.h
+    event_printer.h \
+    sinus_generator.h

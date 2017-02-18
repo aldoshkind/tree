@@ -23,8 +23,7 @@ static std::string demangle(std::string name)
 	return res;
 }
 
-Widget::Widget(QWidget *parent)
-	: QWidget(parent)
+Widget::Widget(QWidget *parent) : QWidget(parent)
 {
 	layout_main = new QHBoxLayout(this);
 	layout_props = new QVBoxLayout();
@@ -37,6 +36,9 @@ Widget::Widget(QWidget *parent)
 	connect(this, SIGNAL(signal_child_added(QString)), this, SLOT(slot_add_item(QString)));
 	connect(this, SIGNAL(signal_child_removed(QString)), this, SLOT(slot_remove_item(QString)));
 	connect(tree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(slot_item_clicked(QTreeWidgetItem*,int)));
+
+	connect(&dl_lat, SIGNAL(signal_value(QString,double)), this, SLOT(slot_property_change(QString,double)));
+	connect(&dl_lon, SIGNAL(signal_value(QString,double)), this, SLOT(slot_property_change(QString,double)));
 }
 
 Widget::~Widget()
@@ -143,6 +145,17 @@ void Widget::new_property(resource *r, property_base *p)
 
 	QLabel *l = new QLabel(QString::fromStdString(demangle(p->get_type())) + " " + QString::fromStdString(n->get_name() + "/" + p->get_name()) + ";");
 	layout_props->addWidget(l);
+
+	if(p->get_name() == "latitude")
+	{
+		label_lat = l;
+		p->add_listener(&dl_lat);
+	}
+	if(p->get_name() == "longitude")
+	{
+		label_lon = l;
+		p->add_listener(&dl_lon);
+	}
 }
 
 void Widget::slot_item_clicked(QTreeWidgetItem *it, int)
@@ -172,4 +185,47 @@ void Widget::slot_item_clicked(QTreeWidgetItem *it, int)
 		return;
 	}
 	n->resource::add_listener(this);
+}
+
+void Widget::slot_property_change(QString name, double value)
+{
+	if(name == "latitude")
+	{
+		label_lat->setText(QString("%0 = %1").arg(name).arg(value));
+	}
+	if(name == "longitude")
+	{
+		label_lon->setText(QString("%0 = %1").arg(name).arg(value));
+	}
+	qDebug() << name << value;
+}
+
+
+
+
+
+
+
+
+
+
+
+/*constructor*/ double_listener::double_listener()
+{
+	//
+}
+
+/*destructor*/ double_listener::~double_listener()
+{
+	//
+}
+
+void double_listener::updated()
+{
+	using ::property;
+	property<double> *pb = dynamic_cast<property<double> *>(get_property());
+	if(pb != NULL)
+	{
+		emit signal_value(QString::fromStdString(pb->get_name()), pb->get_value());
+	}
 }

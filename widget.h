@@ -6,8 +6,23 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QTreeWidget>
+#include <QLabel>
 
 #include "node.h"
+
+class double_listener : public QObject, public property_listener
+{
+	Q_OBJECT
+
+	void					updated						();
+
+public:
+	/*constructor*/			double_listener				();
+	/*destructor*/			~double_listener			();
+
+signals:
+	void					signal_value				(QString value_name, double value);
+};
 
 class Widget : public QWidget, public node::listener_t, public resource::new_property_listener
 {
@@ -24,6 +39,12 @@ class Widget : public QWidget, public node::listener_t, public resource::new_pro
 	void				child_removed			(node *, std::string name);
 	void				new_property			(resource *, property_base *);
 
+	double_listener		dl_lat;
+	double_listener		dl_lon;
+
+	QLabel				*label_lat;
+	QLabel				*label_lon;
+
 	node				*root;
 
 public:
@@ -36,6 +57,7 @@ public slots:
 	void				slot_add_item			(QString path);
 	void				slot_remove_item		(QString path);
 	void				slot_item_clicked		(QTreeWidgetItem*, int);
+	void				slot_property_change	(QString name, double value);
 
 signals:
 	void				signal_child_added		(QString path);

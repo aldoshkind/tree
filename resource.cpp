@@ -13,3 +13,11 @@
 	}
 }
 
+void property_listener::set_property(property_base *p)
+{
+	if(prop != NULL)
+	{
+		prop->remove_listener(this);
+	}
+	prop = p;
+}
