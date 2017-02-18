@@ -12,11 +12,15 @@ class sinus_generator : public QObject, public node
 	Q_OBJECT
 
 	QTimer						*tim;
-	double						angle;
 
 public:
-	/*constructor*/				sinus_generator				(node *parent = NULL) : node(parent)
+	property_value<double>		angle;
+	property_value<double>		sinus;
+	/*constructor*/				sinus_generator				(node *parent = NULL) : node(parent), angle("angle"), sinus("sinus")
 	{
+		add_property(&angle);
+		add_property(&sinus);
+
 		angle = 0.0;
 
 		tim = new QTimer(this);
@@ -37,8 +41,7 @@ public:
 public slots:
 	void						slot_timeout				()
 	{
-		latitude = sin(angle);
-		longitude = cos(angle);
+		sinus = sin(angle);
 		angle += 0.001;
 	}
 };

@@ -121,6 +121,16 @@ public:
 		set_value(v);
 		return *this;
 	}
+	/*value_t*/				operator value_t			() const
+	{
+		return get_value();
+	}
+
+	property<value_t>		&operator +=				(const value_t val)
+	{
+		set_value(get_value() + val);
+		return *this;
+	}
 };
 
 template <class owner_t, class value_t>

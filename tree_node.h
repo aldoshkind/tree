@@ -19,6 +19,7 @@ private:
 
 	const tree_node_t	*parent;
 	std::string			name;
+	bool				attached;
 
 	typedef std::map<std::string, T *>					children_map_t;
 	typedef typename children_map_t::value_type			child_item_t;
@@ -44,7 +45,7 @@ public:
 	virtual /*destructor*/~tree_node_t	();
 
 	T					*append			(std::string path);
-	T					*append			(std::string path, T *obj);
+	T					*attach			(std::string path, T *obj, bool append = true);
 	T					*at				(std::string path);
 	int					remove			(std::string path, bool recursive = false);
 	//int					get				(std::string path, const T *&node) const;
@@ -106,6 +107,7 @@ template <class T>
 /*constructor*/ tree_node_t<T>::tree_node_t(const tree_node_t<T> *parent)
 {
 	this->parent = parent;
+	attached = false;
 }
 
 template <class T>
@@ -117,7 +119,15 @@ template <class T>
 	}
 	for(typename children_map_t::iterator it = children.begin() ; it != children.end() ; ++it)
 	{
-		delete it->second;
+		if(it->second->attached == false)
+		{
+			delete it->second;
+		}
+		else
+		{
+			it->second->set_parent(NULL);
+			// should we report detached to child?
+		}
 	}
 }
 
@@ -146,7 +156,7 @@ void tree_node_t<T>::insert(std::string name, T *obj)
 }
 
 template <class T>
-T *tree_node_t<T>::append(std::string path, T *obj)
+T *tree_node_t<T>::attach(std::string path, T *obj, bool append)
 {
 	if(obj == NULL)
 	{
@@ -164,6 +174,7 @@ T *tree_node_t<T>::append(std::string path, T *obj)
 	T *item = par->get(name, false);
 	if(item == NULL)
 	{
+		obj->attached = !append;
 		par->insert(name, obj);
 		item = obj;
 	}

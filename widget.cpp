@@ -36,9 +36,7 @@ Widget::Widget(QWidget *parent) : QWidget(parent)
 	connect(this, SIGNAL(signal_child_added(QString)), this, SLOT(slot_add_item(QString)));
 	connect(this, SIGNAL(signal_child_removed(QString)), this, SLOT(slot_remove_item(QString)));
 	connect(tree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(slot_item_clicked(QTreeWidgetItem*,int)));
-
-	connect(&dl_lat, SIGNAL(signal_value(QString,double)), this, SLOT(slot_property_change(QString,double)));
-	connect(&dl_lon, SIGNAL(signal_value(QString,double)), this, SLOT(slot_property_change(QString,double)));
+	connect(this, SIGNAL(signal_nondouble_property(QString)), this, SLOT(slot_nondouble_property(QString)));
 }
 
 Widget::~Widget()
@@ -143,18 +141,16 @@ void Widget::new_property(resource *r, property_base *p)
 		return;
 	}
 
-	QLabel *l = new QLabel(QString::fromStdString(demangle(p->get_type())) + " " + QString::fromStdString(n->get_name() + "/" + p->get_name()) + ";");
-	layout_props->addWidget(l);
-
-	if(p->get_name() == "latitude")
+	if(p->get_type() == "d")
 	{
-		label_lat = l;
-		p->add_listener(&dl_lat);
+		double_listener *list = new double_listener;
+		connect(list, SIGNAL(signal_value(QString,double)), this, SLOT(slot_property_change(QString,double)));
+		p->add_listener(list);
+		double_listeners.insert(list);
 	}
-	if(p->get_name() == "longitude")
+	else
 	{
-		label_lon = l;
-		p->add_listener(&dl_lon);
+		emit signal_nondouble_property(QString::fromStdString(p->get_type() + " " + p->get_name()));
 	}
 }
 
@@ -167,6 +163,14 @@ void Widget::slot_item_clicked(QTreeWidgetItem *it, int)
 		delete item;
 	}
 	unsubscribe();
+
+	double_widgets.clear();
+
+	for(double_listeners_t::iterator it = double_listeners.begin() ; it != double_listeners.end() ; ++it)
+	{
+		delete *it;
+	}
+	double_listeners.clear();
 
 	QString path;
 	for( ; ; )
@@ -189,15 +193,22 @@ void Widget::slot_item_clicked(QTreeWidgetItem *it, int)
 
 void Widget::slot_property_change(QString name, double value)
 {
-	if(name == "latitude")
+	if(double_widgets.find(name) == double_widgets.end())
 	{
-		label_lat->setText(QString("%0 = %1").arg(name).arg(value));
+		QLabel *l = new QLabel(this);
+		layout_props->addWidget(l);
+		double_widgets[name] = l;
 	}
-	if(name == "longitude")
-	{
-		label_lon->setText(QString("%0 = %1").arg(name).arg(value));
-	}
+
+	double_widgets[name]->setText(QString("%0 = %1").arg(name).arg(value));
 	qDebug() << name << value;
+}
+
+void Widget::slot_nondouble_property(QString text)
+{
+	QLabel *l = new QLabel(this);
+	l->setText(text);
+	layout_props->addWidget(l);
 }
 
 

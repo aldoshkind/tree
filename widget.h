@@ -39,11 +39,10 @@ class Widget : public QWidget, public node::listener_t, public resource::new_pro
 	void				child_removed			(node *, std::string name);
 	void				new_property			(resource *, property_base *);
 
-	double_listener		dl_lat;
-	double_listener		dl_lon;
-
-	QLabel				*label_lat;
-	QLabel				*label_lon;
+	typedef std::set<double_listener *>			double_listeners_t;
+	double_listeners_t							double_listeners;
+	typedef std::map<QString, QLabel *>			double_widgets_t;
+	double_widgets_t							double_widgets;
 
 	node				*root;
 
@@ -58,8 +57,10 @@ public slots:
 	void				slot_remove_item		(QString path);
 	void				slot_item_clicked		(QTreeWidgetItem*, int);
 	void				slot_property_change	(QString name, double value);
+	void				slot_nondouble_property		(QString text);
 
 signals:
 	void				signal_child_added		(QString path);
 	void				signal_child_removed	(QString path);
+	void				signal_nondouble_property		(QString text);
 };
