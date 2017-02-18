@@ -5,7 +5,7 @@
 
 class node : public resource, public tree_node_t<node>
 {
-	/*constructor*/			node			(const node &n) : resource()
+	/*constructor*/			node			(const node &/*n*/) : resource()
 															, tree_node_t<node>()
 	{
 		//

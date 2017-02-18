@@ -80,7 +80,7 @@ public:
 			//
 		}
 
-		virtual void				child_removed							(T *, std::string name)
+		virtual void				child_removed							(T *, std::string/* name*/)
 		{
 			//
 		}

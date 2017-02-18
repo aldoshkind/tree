@@ -8,21 +8,6 @@
 
 #include "filepath_utils.h"
 
-static std::string demangle(std::string name)
-{
-	std::string res = std::string("error demagling type ") + "(" + name + ")";
-
-	int status = -1;
-	char *ret = abi::__cxa_demangle(name.c_str(), 0, 0, &status);
-	if(ret != NULL)
-	{
-		res = std::string(ret);
-	}
-	free(ret);
-
-	return res;
-}
-
 Widget::Widget(QWidget *parent) : QWidget(parent)
 {
 	layout_main = new QHBoxLayout(this);
