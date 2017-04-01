@@ -60,7 +60,7 @@ public:
 	std::string			get_name		() const;
 	std::string			get_path		() const;
 
-	tree_node_t			*get_parent		() const;
+	const tree_node_t	*get_parent		() const;
 
 
 	class listener_t
@@ -334,7 +334,7 @@ void tree_node_t<T>::set_parent(const tree_node_t *parent)
 	this->parent = parent;
 }
 template <class T>
-tree_node_t<T> *tree_node_t<T>::get_parent() const
+const tree_node_t<T> *tree_node_t<T>::get_parent() const
 {
 	return parent;
 }
