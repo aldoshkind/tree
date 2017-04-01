@@ -334,7 +334,7 @@ void tree_node_t<T>::set_parent(const tree_node_t *parent)
 	this->parent = parent;
 }
 template <class T>
-tree_node_t *tree_node_t<T>::get_parent() const
+tree_node_t<T> *tree_node_t<T>::get_parent() const
 {
 	return parent;
 }
