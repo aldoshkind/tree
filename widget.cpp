@@ -133,6 +133,16 @@ void Widget::new_property(resource *r, property_base *p)
 		p->add_listener(list);
 		double_listeners.insert(list);
 	}
+	else if(p->get_type() == typeid(std::string).name())
+	{
+		using ::property;
+		property<std::string> *pr = dynamic_cast<property<std::string> *>(p);
+		if(pr == NULL)
+		{
+			return;
+		}
+		emit signal_nondouble_property(QString::fromStdString(p->get_name() + " = " + pr->get_value()));
+	}
 	else
 	{
 		emit signal_nondouble_property(QString::fromStdString(p->get_type() + " " + p->get_name()));

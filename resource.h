@@ -344,13 +344,14 @@ public:
 		return props;
 	}
 
-	void					add_property				(property_base *p)
+	property_base			*add_property				(property_base *p)
 	{
 		props.push_back(p);
 		for(listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
 			(*it)->new_property(this, p);
 		}
+		return p;
 	}
 
 private:
