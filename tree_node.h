@@ -186,7 +186,7 @@ T *tree_node_t<T>::attach(std::string path, T *obj, bool append)
 template <class T>
 T *tree_node_t<T>::at(std::string path)
 {
-	return get(path, true);
+	return get(path, false);
 }
 
 template <class T>
