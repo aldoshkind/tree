@@ -93,13 +93,14 @@ void Widget::slot_remove_item(QString path)
 			item = path_to_item_map[cur_path];
 			if(i == (pts.size() - 1))
 			{
+				printf("remove %s\n", cur_path.toStdString().c_str());
 				delete item;
+				path_to_item_map.erase(cur_path);
 			}
 
 			continue;
 		}
 	}
-
 }
 
 void Widget::set_tree(node *n)

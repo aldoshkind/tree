@@ -19,6 +19,7 @@ public:
 
 	/*destructor*/			~node			()
 	{
+		destruct();
 		printf("destructor %s\n", get_path().c_str());
 	}
 

@@ -21,9 +21,11 @@ private:
 	std::string			name;
 	bool				attached;
 
-	typedef std::map<std::string, T *>					children_map_t;
+	/*typedef std::map<std::string, T *>					children_map_t;
 	typedef typename children_map_t::value_type			child_item_t;
-	children_map_t										children;
+	children_map_t										children;*/
+	typedef std::vector<T *>							children_t;
+	children_t											children;
 
 	typedef std::set<listener_t *>						listeners_t;
 	listeners_t											listeners;
@@ -35,7 +37,12 @@ private:
 	void				set_parent		(const tree_node_t *parent);
 
 	T					*get			(std::string path, bool create);
-	void				insert			(std::string name, T *obj);
+	typename children_t::size_type		insert			(std::string name, T *obj);
+
+	bool				destructed;
+
+protected:
+	void				destruct		();
 
 public:
 	typedef std::vector<std::string>	ls_list_t;
@@ -61,6 +68,8 @@ public:
 	std::string			get_path		() const;
 
 	const tree_node_t	*get_parent		() const;
+
+	typename children_t::size_type	find		(std::string name) const;
 
 
 	class listener_t
@@ -109,26 +118,44 @@ template <class T>
 {
 	this->parent = parent;
 	attached = false;
+	destructed = false;
 }
 
 template <class T>
 /*destructor*/ tree_node_t<T>::~tree_node_t()
 {
-	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+	destruct();
+}
+
+template <class T>
+void tree_node_t<T>::destruct()
+{
+	if(destructed == true)
 	{
-		(*it)->on_remove(dynamic_cast<T *>(this));
+		return;
 	}
-	for(typename children_map_t::iterator it = children.begin() ; it != children.end() ; ++it)
+	destructed = true;
+
+	for(typename children_t::size_type i = 0 ; i < children.size() ; i += 1)
 	{
-		if(it->second->attached == false)
+		if(children[i]->attached == false)
 		{
-			delete it->second;
+			std::string name = children[i]->get_name();
+			delete children[i];
+			for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+			{
+				(*it)->child_removed(dynamic_cast<T *>(this), name);
+			}
 		}
 		else
 		{
-			it->second->set_parent(NULL);
+			children[i]->set_parent(NULL);
 			// should we report detached to child?
 		}
+	}
+	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+	{
+		(*it)->on_remove(dynamic_cast<T *>(this));
 	}
 }
 
@@ -139,9 +166,10 @@ T *tree_node_t<T>::append(std::string path)
 }
 
 template <class T>
-void tree_node_t<T>::insert(std::string name, T *obj)
+typename tree_node_t<T>::children_t::size_type tree_node_t<T>::insert(std::string name, T *obj)
 {
-	children[name] = obj;
+	children.push_back(obj);
+	//children[name] = obj;
 	obj->set_parent(this);
 	obj->set_name(name);
 
@@ -154,6 +182,7 @@ void tree_node_t<T>::insert(std::string name, T *obj)
 	{
 		obj->add_listener(*it, true);
 	}
+	return children.size() - 1;
 }
 
 template <class T>
@@ -205,17 +234,18 @@ T *tree_node_t<T>::get(std::string path, bool create)
 	std::string name, rest_of_path;
 	extract_next_level_name(path, name, rest_of_path);
 
-	typename children_map_t::const_iterator it = children.find(name);
-	if(it == children.end())
+	//typename children_t::const_iterator it = children.find(name);
+	typename children_t::size_type child_id = find(name);
+	if(child_id >= children.size())
 	{
 		if(create == false)
 		{
 			return NULL;
 		}
 
-		insert(name, new T(this));
+		child_id = insert(name, new T(this));
 	}
-	return children[name]->operator[](rest_of_path);
+	return children[child_id]->operator[](rest_of_path);
 }
 
 template <class T>
@@ -229,20 +259,24 @@ int tree_node_t<T>::remove(std::string path, bool recursive)
 	std::string name, rest_of_path;
 	extract_next_level_name(path, name, rest_of_path);
 
+	typename children_t::size_type child_id = find(name);
+
 	// если нет такого потомка, то ошибка
-	if(children.find(name) == children.end())
+	if(child_id >= children.size())
 	{
 		return -1;
 	}
+
+	T *child = children[child_id];
 
 	// если потомок есть, и остальной путь пуст - то удалять потомка
 	if(rest_of_path.size() == 0)
 	{
 		// если удаление рекурсивное, или потомок пустой - то удаляем, иначе ошибка
-		if(recursive || (children[name]->is_empty() == true))
+		if(recursive || (child->is_empty() == true))
 		{
-			delete children[name];
-			children.erase(name);
+			delete child;
+			children.erase(children.begin() + child_id);
 			for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 			{
 				(*it)->child_removed(dynamic_cast<T *>(this), name);
@@ -251,15 +285,15 @@ int tree_node_t<T>::remove(std::string path, bool recursive)
 		}
 	}
 
-	return children[name]->remove(rest_of_path, recursive);
+	return child->remove(rest_of_path, recursive);
 }
 
 template <class T>
 void tree_node_t<T>::print(std::string name) const
 {
-	for(typename children_map_t::const_iterator it = children.begin() ; it != children.end() ; ++it)
+	for(typename children_t::const_iterator it = children.begin() ; it != children.end() ; ++it)
 	{
-		it->second->print(name + '/' + it->first);
+		(*it)->print(name + '/' + (*it)->get_name());
 	}
 }
 
@@ -280,9 +314,9 @@ typename tree_node_t<T>::ls_list_t tree_node_t<T>::ls() const
 {
 	ls_list_t list;
 
-	for(typename children_map_t::const_iterator it = children.begin() ; it != children.end() ; ++it)
+	for(typename children_t::const_iterator it = children.begin() ; it != children.end() ; ++it)
 	{
-		list.push_back(it->first);
+		list.push_back((*it)->get_name());
 	}
 
 	return list;
@@ -302,12 +336,12 @@ void tree_node_t<T>::add_listener(listener_t *l, bool recursive)
 	{
 		recursive_listeners.insert(l);
 	}
-	for(typename children_map_t::iterator it = children.begin() ; it != children.end() ; ++it)
+	for(typename children_t::iterator it = children.begin() ; it != children.end() ; ++it)
 	{
-		l->child_added(it->second);
+		l->child_added(*it);
 		if(recursive == true)
 		{
-			it->second->add_listener(l, recursive);
+			(*it)->add_listener(l, recursive);
 		}
 	}
 }
@@ -333,8 +367,22 @@ void tree_node_t<T>::set_parent(const tree_node_t *parent)
 {
 	this->parent = parent;
 }
+
 template <class T>
 const tree_node_t<T> *tree_node_t<T>::get_parent() const
 {
 	return parent;
+}
+
+template <class T>
+typename tree_node_t<T>::children_t::size_type tree_node_t<T>::find(std::string name) const
+{
+	for(typename children_t::size_type i = 0 ; i < children.size() ; i += 1)
+	{
+		if(children[i]->get_name() == name)
+		{
+			return i;
+		}
+	}
+	return std::numeric_limits<typename children_t::size_type>::max();
 }
