@@ -48,7 +48,6 @@ public:
 	T					*attach			(std::string path, T *obj, bool append = true);
 	T					*at				(std::string path);
 	int					remove			(std::string path, bool recursive = false);
-	//int					get				(std::string path, const T *&node) const;
 
 	ls_list_t			ls				() const;
 
@@ -60,6 +59,8 @@ public:
 
 	std::string			get_name		() const;
 	std::string			get_path		() const;
+
+	const tree_node_t	*get_parent		() const;
 
 
 	class listener_t
@@ -185,7 +186,7 @@ T *tree_node_t<T>::attach(std::string path, T *obj, bool append)
 template <class T>
 T *tree_node_t<T>::at(std::string path)
 {
-	return get(path, true);
+	return get(path, false);
 }
 
 template <class T>
@@ -324,11 +325,16 @@ std::string tree_node_t<T>::get_path() const
 	{
 		return parent->get_path() + "/" + get_name();
 	}
-	return "";//"/";
+	return "";
 }
 
 template <class T>
 void tree_node_t<T>::set_parent(const tree_node_t *parent)
 {
 	this->parent = parent;
+}
+template <class T>
+const tree_node_t<T> *tree_node_t<T>::get_parent() const
+{
+	return parent;
 }

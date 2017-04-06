@@ -106,7 +106,7 @@ public:
 		return value_t();
 	}
 
-	virtual void			set_value					(const value_t &value)
+	virtual void			set_value					(const value_t &/*value*/)
 	{
 		notify_change();
 	}
