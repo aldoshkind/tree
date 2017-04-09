@@ -354,6 +354,32 @@ public:
 		return p;
 	}
 
+	const property_base		*get_property				(const std::string &name) const
+	{
+		for(props_t::size_type i = 0 ; i < props.size() ; i += 1)
+		{
+			const property_base * const &prop = props[i];
+			if(prop->get_name() == name)
+			{
+				return prop;
+			}
+		}
+		return nullptr;
+	}
+
+	property_base			*get_property				(const std::string &name)
+	{
+		for(props_t::size_type i = 0 ; i < props.size() ; i += 1)
+		{
+			property_base *&prop = props[i];
+			if(prop->get_name() == name)
+			{
+				return prop;
+			}
+		}
+		return nullptr;
+	}
+
 private:
 	props_t					props;
 };

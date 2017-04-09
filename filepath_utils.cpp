@@ -21,7 +21,9 @@ int extract_last_level_name(std::string path, std::string &start, std::string &l
 	size_t name_end_pos = path.find_last_of('/');
 	if(name_end_pos == std::string::npos)
 	{
-		start = path;
+		// here is a question how to do it correctly. take a look at git history of next two strings
+		start = "";
+		last = path;
 		return 0;
 	}
 	start = path.substr(0, name_end_pos);

@@ -37,6 +37,7 @@ private:
 	void				set_parent		(const tree_node_t *parent);
 
 	T					*get			(std::string path, bool create);
+	const T				*get			(std::string path) const;
 	typename children_t::size_type		insert			(std::string name, T *obj);
 
 	bool				destructed;
@@ -54,6 +55,7 @@ public:
 	T					*append			(std::string path);
 	T					*attach			(std::string path, T *obj, bool append = true);
 	T					*at				(std::string path);
+	const T				*at				(std::string path) const;
 	int					remove			(std::string path, bool recursive = false);
 
 	ls_list_t			ls				() const;
@@ -219,6 +221,12 @@ T *tree_node_t<T>::at(std::string path)
 }
 
 template <class T>
+const T *tree_node_t<T>::at(std::string path) const
+{
+	return get(path);
+}
+
+template <class T>
 T *tree_node_t<T>::get(std::string path, bool create)
 {
 	if(path[0] == '/')
@@ -246,6 +254,30 @@ T *tree_node_t<T>::get(std::string path, bool create)
 		child_id = insert(name, new T(this));
 	}
 	return children[child_id]->operator[](rest_of_path);
+}
+
+template <class T>
+const T *tree_node_t<T>::get(std::string path) const
+{
+	if(path[0] == '/')
+	{
+		path = path.substr(1);
+	}
+
+	if(path == "/" || path.size() == 0)
+	{
+		return dynamic_cast<const T*>(this);
+	}
+
+	std::string name, rest_of_path;
+	extract_next_level_name(path, name, rest_of_path);
+
+	typename children_t::size_type child_id = find(name);
+	if(child_id >= children.size())
+	{
+		return NULL;
+	}
+	return children[child_id]->get(rest_of_path);
 }
 
 template <class T>
