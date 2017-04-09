@@ -19,11 +19,8 @@ private:
 
 	const tree_node_t	*parent;
 	std::string			name;
-	bool				attached;
+	bool				attached;	// if true - do not destruct
 
-	/*typedef std::map<std::string, T *>					children_map_t;
-	typedef typename children_map_t::value_type			child_item_t;
-	children_map_t										children;*/
 	typedef std::vector<T *>							children_t;
 	children_t											children;
 
@@ -142,17 +139,17 @@ void tree_node_t<T>::destruct()
 	{
 		if(children[i]->attached == false)
 		{
-			std::string name = children[i]->get_name();
 			delete children[i];
-			for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
-			{
-				(*it)->child_removed(dynamic_cast<T *>(this), name);
-			}
 		}
 		else
 		{
 			children[i]->set_parent(NULL);
 			// should we report detached to child?
+		}
+		const std::string &name = children[i]->get_name();
+		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+		{
+			(*it)->child_removed(dynamic_cast<T *>(this), name);
 		}
 	}
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
@@ -307,7 +304,10 @@ int tree_node_t<T>::remove(std::string path, bool recursive)
 		// если удаление рекурсивное, или потомок пустой - то удаляем, иначе ошибка
 		if(recursive || (child->is_empty() == true))
 		{
-			delete child;
+			if(child->attached == false)
+			{
+				delete child;
+			}
 			children.erase(children.begin() + child_id);
 			for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 			{
