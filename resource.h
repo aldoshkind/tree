@@ -222,7 +222,7 @@ class property_value : public property<value_t>
 	value_t					value;
 
 public:
-	/*constructor*/			property_value					(std::string name) : property<value_t>(name)
+	/*constructor*/			property_value					(std::string name) : property<value_t>(name), value()
 	{
 		//
 	}
