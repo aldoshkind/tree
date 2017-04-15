@@ -15,13 +15,14 @@ class tree_node_t
 {
 public:
 	class listener_t;
-private:
+	typedef std::vector<std::string>	ls_list_t;
+	typedef std::vector<T *>			children_t;
 
+private:
 	const tree_node_t	*parent;
 	std::string			name;
 	bool				attached;	// if true - do not destruct
 
-	typedef std::vector<T *>							children_t;
 	children_t											children;
 
 	typedef std::set<listener_t *>						listeners_t;
@@ -35,15 +36,11 @@ private:
 
 	T					*get			(std::string path, bool create);
 	const T				*get			(std::string path) const;
-	typename children_t::size_type		insert			(std::string name, T *obj);
 
 	bool				destructed;
 
 protected:
 	void				destruct		();
-
-public:
-	typedef std::vector<std::string>	ls_list_t;
 
 public:
 	/*constructor*/		tree_node_t		(const tree_node_t *parent = NULL);
@@ -54,6 +51,9 @@ public:
 	T					*at				(std::string path);
 	const T				*at				(std::string path) const;
 	int					remove			(std::string path, bool recursive = false);
+	typename children_t::size_type		insert			(std::string name, T *obj, typename children_t::size_type after = std::numeric_limits<typename children_t::size_type>::max());
+	//typename children_t::size_type		insert			(std::string name, T *obj, std::string after);
+	typename children_t::size_type		insert			(std::string name, T *obj, std::string after, bool append = true);
 
 	ls_list_t			ls				() const;
 
@@ -67,6 +67,8 @@ public:
 	std::string			get_path		() const;
 
 	const tree_node_t	*get_parent		() const;
+
+	children_t			get_children	() const;
 
 	typename children_t::size_type	find		(std::string name) const;
 
@@ -165,10 +167,16 @@ T *tree_node_t<T>::append(std::string path)
 }
 
 template <class T>
-typename tree_node_t<T>::children_t::size_type tree_node_t<T>::insert(std::string name, T *obj)
+typename tree_node_t<T>::children_t::size_type tree_node_t<T>::insert(std::string name, T *obj, typename children_t::size_type after)
 {
-	children.push_back(obj);
-	//children[name] = obj;
+	if(after >= children.size())
+	{
+		children.push_back(obj);
+	}
+	else
+	{
+		children.insert(children.begin() + after, obj);
+	}
 	obj->set_parent(this);
 	obj->set_name(name);
 
@@ -182,6 +190,19 @@ typename tree_node_t<T>::children_t::size_type tree_node_t<T>::insert(std::strin
 		obj->add_listener(*it, true);
 	}
 	return children.size() - 1;
+}
+
+/*template <class T>
+typename tree_node_t<T>::children_t::size_type tree_node_t<T>::insert(std::string name, T *obj, std::string after)
+{
+	return insert(name, obj, find(after));
+}*/
+
+template <class T>
+typename tree_node_t<T>::children_t::size_type tree_node_t<T>::insert(std::string name, T *obj, std::string after, bool append)
+{
+	obj->attached = !append;
+	return insert(name, obj, find(after));
 }
 
 template <class T>
@@ -417,4 +438,10 @@ typename tree_node_t<T>::children_t::size_type tree_node_t<T>::find(std::string 
 		}
 	}
 	return std::numeric_limits<typename children_t::size_type>::max();
+}
+
+template <class T>
+typename tree_node_t<T>::children_t tree_node_t<T>::get_children() const
+{
+	return children;
 }
