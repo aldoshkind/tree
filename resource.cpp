@@ -1,23 +1,28 @@
 #include "resource.h"
 
-/*constructor*/ property_listener::property_listener() : prop(NULL)
+/*constructor*/ property_listener::property_listener()
 {
 	//
 }
 
 /*destructor*/ property_listener::~property_listener()
 {
-	if(prop != NULL)
+	for(properties_t::iterator it = properties.begin() ; it != properties.end() ; ++it)
 	{
-		prop->remove_listener(this);
+		(*it)->remove_listener(this);
 	}
 }
 
-void property_listener::set_property(property_base *p)
+void property_listener::add_property(property_base *p)
 {
-	if(prop != NULL)
+	properties.insert(p);
+}
+
+void property_listener::remove_property(property_base *p)
+{
+	if(p == NULL || properties.find(p) == properties.end())
 	{
-		prop->remove_listener(this);
+		return;
 	}
-	prop = p;
+	properties.erase(p);
 }

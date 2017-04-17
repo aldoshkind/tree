@@ -227,10 +227,10 @@ void Widget::slot_nondouble_property(QString text)
 	//
 }
 
-void double_listener::updated()
+void double_listener::updated(property_base *prop)
 {
 	using ::property;
-	property<double> *pb = dynamic_cast<property<double> *>(get_property());
+	property<double> *pb = dynamic_cast<property<double> *>(prop);
 	if(pb != NULL)
 	{
 		emit signal_value(QString::fromStdString(pb->get_name()), pb->get_value());

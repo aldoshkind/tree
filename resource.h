@@ -12,20 +12,19 @@ class property;
 
 class property_listener
 {
-	property_base					*prop;
+	typedef std::set<property_base *>		properties_t;
+	properties_t							properties;
 
 public:
 	/*constructor*/					property_listener			();
 	virtual /*destructor*/			~property_listener			();
 
-	void							set_property				(property_base *p);
-	virtual void					updated						() = 0;
-
-	property_base					*get_property				() const
-	{
-		return prop;
-	}
+	void							add_property				(property_base *p);
+	void							remove_property				(property_base *p);
+	virtual void					updated						(property_base *prop) = 0;
 };
+
+class resource;
 
 class property_base
 {
@@ -35,10 +34,19 @@ class property_base
 	std::string					name;
 	std::string					type;
 
+	resource					*res;
+
+	void						set_resource			(resource *res)
+	{
+		this->res = res;
+	}
+
+	friend class resource;
+
 public:
 	/*constructor*/			property_base				(std::string n) : name(n)
 	{
-		//
+		res = NULL;
 	}
 
 	virtual /*destructor*/	~property_base				()
@@ -52,14 +60,14 @@ public:
 	void					add_listener				(property_listener *l)
 	{
 		listeners.insert(l);
-		l->set_property(this);
-		l->updated();
+		l->add_property(this);
+		l->updated(this);
 	}
 
 	void					remove_listener				(property_listener *l)
 	{
 		listeners.erase(l);
-		//l->set_property(NULL);
+		l->remove_property(this);
 	}
 
 	std::string				get_name					() const
@@ -72,6 +80,11 @@ public:
 		return type;
 	}
 
+	resource				*get_resource				() const
+	{
+		return res;
+	}
+
 protected:
 	void					set_type					(std::string type)
 	{
@@ -82,7 +95,7 @@ protected:
 	{
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
-			(*it)->updated();
+			(*it)->updated(this);
 		}
 	}
 };
@@ -347,6 +360,7 @@ public:
 	property_base			*add_property				(property_base *p)
 	{
 		props.push_back(p);
+		p->set_resource(this);
 		for(listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
 			(*it)->new_property(this, p);

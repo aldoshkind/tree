@@ -14,7 +14,7 @@ class double_listener : public QObject, public property_listener
 {
 	Q_OBJECT
 
-	void					updated						();
+	void					updated						(property_base *prop);
 
 public:
 	/*constructor*/			double_listener				();
