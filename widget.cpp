@@ -31,7 +31,7 @@ Widget::~Widget()
 
 void Widget::slot_add_item(QString path)
 {
-	printf("%s %s\n", __func__, path.toStdString().c_str());
+	//printf("%s %s\n", __func__, path.toStdString().c_str());
 
 	std::string pstd = path.toStdString();
 	char *p = (char *)malloc(pstd.size() + 1);
@@ -72,7 +72,7 @@ void Widget::slot_add_item(QString path)
 
 void Widget::slot_remove_item(QString path)
 {
-	printf("%s %s\n", __func__, path.toStdString().c_str());
+	//printf("%s %s\n", __func__, path.toStdString().c_str());
 
 	std::string pstd = path.toStdString();
 	char *p = (char *)malloc(pstd.size() + 1);
@@ -93,7 +93,7 @@ void Widget::slot_remove_item(QString path)
 			item = path_to_item_map[cur_path];
 			if(i == (pts.size() - 1))
 			{
-				printf("remove %s\n", cur_path.toStdString().c_str());
+				//printf("remove %s\n", cur_path.toStdString().c_str());
 				delete item;
 				path_to_item_map.erase(cur_path);
 			}

@@ -20,7 +20,7 @@ public:
 	/*destructor*/			~node			()
 	{
 		destruct();
-		printf("destructor %s\n", get_path().c_str());
+		//printf("destructor %s\n", get_path().c_str());
 	}
 
 	using tree_node_t<node>::add_listener;
