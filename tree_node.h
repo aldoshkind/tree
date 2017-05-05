@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <limits>
 
 #include "filepath_utils.h"
 
