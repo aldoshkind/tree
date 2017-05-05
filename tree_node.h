@@ -6,8 +6,6 @@
 #include <set>
 #include <string>
 
-#include <QDebug>
-
 #include "filepath_utils.h"
 
 template <class T>
@@ -247,9 +245,10 @@ const T *tree_node_t<T>::at(std::string path) const
 template <class T>
 T *tree_node_t<T>::get(std::string path, bool create)
 {
-	if(path[0] == '/')
+	std::string::size_type begin = path.find_first_not_of('/');
+	if((begin != 0) && (begin != std::string::npos))
 	{
-		path = path.substr(1);
+		path = path.substr(begin);
 	}
 
 	if(path == "/" || path.size() == 0)
@@ -277,9 +276,10 @@ T *tree_node_t<T>::get(std::string path, bool create)
 template <class T>
 const T *tree_node_t<T>::get(std::string path) const
 {
-	if(path[0] == '/')
+	std::string::size_type begin = path.find_first_not_of('/');
+	if((begin != 0) && (begin != std::string::npos))
 	{
-		path = path.substr(1);
+		path = path.substr(begin);
 	}
 
 	if(path == "/" || path.size() == 0)
@@ -301,9 +301,10 @@ const T *tree_node_t<T>::get(std::string path) const
 template <class T>
 int tree_node_t<T>::remove(std::string path, bool recursive)
 {
-	if(path[0] == '/')
+	std::string::size_type begin = path.find_first_not_of('/');
+	if((begin != 0) && (begin != std::string::npos))
 	{
-		path = path.substr(1);
+		path = path.substr(begin);
 	}
 
 	std::string name, rest_of_path;
