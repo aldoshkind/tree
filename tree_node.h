@@ -6,8 +6,6 @@
 #include <set>
 #include <string>
 
-#include <QDebug>
-
 #include "filepath_utils.h"
 
 template <class T>
