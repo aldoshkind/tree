@@ -91,3 +91,10 @@ int clean_path(char *path)
 
 	return 0;
 }
+
+int clean_path(std::string &path)
+{
+	int res = clean_path((char *)path.c_str());
+	path.resize(strlen(path.c_str()));
+	return res;
+}
