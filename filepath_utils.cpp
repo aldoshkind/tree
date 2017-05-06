@@ -54,11 +54,13 @@ int clean_path(char *path)
 			{
 				p[target] = 0;
 				target -= 1;
+				continue;
 			}
 			if(strncmp(path + start, "./", 2) == 0)
 			{
 				p[target - 1] = 0;
 				target -= 2;
+				continue;
 			}
 
 			if(strncmp(path + start, "../", 3) == 0)
@@ -81,6 +83,8 @@ int clean_path(char *path)
 				memset(p + new_target, 0, target - new_target);
 				p[new_target] = 0;
 				target = new_target - 1;
+				start -= 3;
+				continue;
 			}
 
 			start = i + 1;
