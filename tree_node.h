@@ -271,7 +271,7 @@ T *tree_node_t<T>::get(std::string path, bool create)
 
 		child_id = insert(name, new T(this));
 	}
-	return children[child_id]->operator[](rest_of_path);
+	return children[child_id]->get(rest_of_path, create);
 }
 
 template <class T>
