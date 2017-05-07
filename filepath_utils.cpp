@@ -33,9 +33,7 @@ int extract_last_level_name(std::string path, std::string &start, std::string &l
 
 int clean_path(char *path)
 {
-	int path_len = strlen(path);
-
-	if(path_len < 1 || path[0] != '/')
+	if(path == NULL || path[0] != '/')
 	{
 		return -1;
 	}
@@ -45,25 +43,25 @@ int clean_path(char *path)
 	int start = 1;
 	int target = 1;
 	int i = 0;
-	for(i = 1 ; i < path_len ; i += 1, target += 1)
+	for(i = 1 ; ; i += 1, target += 1)
 	{
 		p[target] = path[i];
-		if(path[i] == '/')
+		if((path[i] == '/') || (path[i] == 0))
 		{
-			if((start - i) == 0)
+			int len = target - start;
+			if((target - start) == 0)
 			{
-				p[target] = 0;
+				start = target;
+				p[start] = path[i];
 				target -= 1;
-				continue;
 			}
-			if(strncmp(path + start, "./", 2) == 0)
+			else if(len == 1 && strncmp(path + start, ".", 1) == 0)
 			{
-				p[target - 1] = 0;
+				start = target - 1;
+				p[start] = path[i];
 				target -= 2;
-				continue;
 			}
-
-			if(strncmp(path + start, "../", 3) == 0)
+			else if(len == 2 && strncmp(path + start, "..", 2) == 0)
 			{
 				int slash_count = 0;
 				int j = 0;
@@ -80,18 +78,25 @@ int clean_path(char *path)
 					}
 				}
 				int new_target = j;
-				memset(p + new_target, 0, target - new_target);
-				p[new_target] = 0;
 				target = new_target - 1;
-				start -= 3;
-				continue;
+				start = target + 1;
+				p[start] = path[i];
 			}
-
-			start = i + 1;
-			continue;
+			else
+			{
+				start = target + 1;
+			}
+		}
+		if(path[i] == 0)
+		{
+			break;
 		}
 	}
-	p[target] = 0;
+
+	if(target > 1 && p[target] == '/')
+	{
+		p[target] = 0;
+	}
 
 	return 0;
 }
