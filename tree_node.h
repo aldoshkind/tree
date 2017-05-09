@@ -45,20 +45,15 @@ public:
 	/*constructor*/		tree_node_t		(const tree_node_t *parent = NULL);
 	virtual /*destructor*/~tree_node_t	();
 
-	T					*append			(std::string path);
-	T					*attach			(std::string path, T *obj, bool append = true);
-	T					*at				(std::string path);
-	const T				*at				(std::string path) const;
-	int					remove			(std::string path, bool recursive = false);
-	typename children_t::size_type		insert			(std::string name, T *obj, typename children_t::size_type after = std::numeric_limits<typename children_t::size_type>::max());
-	//typename children_t::size_type		insert			(std::string name, T *obj, std::string after);
-	typename children_t::size_type		insert			(std::string name, T *obj, std::string after, bool append = true);
+	virtual T			*generate		(std::string path);
+	virtual T			*attach			(std::string path, T *obj, bool append = true);
+	virtual T			*at				(std::string path);
+	virtual const T		*at				(std::string path) const;
+	virtual int			remove			(std::string path, bool recursive = false);
+	virtual typename children_t::size_type		insert			(std::string name, T *obj, typename children_t::size_type after = std::numeric_limits<typename children_t::size_type>::max());
+	virtual typename children_t::size_type		insert			(std::string name, T *obj, std::string after, bool generate = true);
 
-	ls_list_t			ls				() const;
-
-	T					*operator []	(std::string path);
-
-	virtual void		print			(std::string name = "") const;
+	virtual ls_list_t	ls				() const;
 
 	void				add_listener	(listener_t *, bool recursive = false);
 
@@ -67,7 +62,7 @@ public:
 
 	const tree_node_t	*get_parent		() const;
 
-	children_t			get_children	() const;
+	virtual children_t	get_children	() const;
 
 	typename children_t::size_type	find		(std::string name) const;
 
@@ -75,30 +70,11 @@ public:
 	class listener_t
 	{
 	public:
-		/*constructor*/				listener_t					()
-		{
-			//
-		}
-
-		virtual /*destructor*/		~listener_t					()
-		{
-			//
-		}
-
-		virtual void				child_added								(T *)
-		{
-			//
-		}
-
-		virtual void				child_removed							(T *, std::string/* name*/)
-		{
-			//
-		}
-
-		virtual void				on_remove								(T *)
-		{
-			//
-		}
+		/*constructor*/				listener_t					() {}
+		virtual /*destructor*/		~listener_t					() {}
+		virtual void				child_added								(T *) {}
+		virtual void				child_removed							(T *, std::string/* name*/) {}
+		virtual void				on_remove								(T *) {}
 	};
 };
 
@@ -160,7 +136,7 @@ void tree_node_t<T>::destruct()
 }
 
 template <class T>
-T *tree_node_t<T>::append(std::string path)
+T *tree_node_t<T>::generate(std::string path)
 {
 	return get(path, true);
 }
@@ -341,21 +317,6 @@ int tree_node_t<T>::remove(std::string path, bool recursive)
 	}
 
 	return child->remove(rest_of_path, recursive);
-}
-
-template <class T>
-void tree_node_t<T>::print(std::string name) const
-{
-	for(typename children_t::const_iterator it = children.begin() ; it != children.end() ; ++it)
-	{
-		(*it)->print(name + '/' + (*it)->get_name());
-	}
-}
-
-template <class T>
-T *tree_node_t<T>::operator [] (std::string path)
-{
-	return get(path, true);
 }
 
 template <class T>
