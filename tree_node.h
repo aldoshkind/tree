@@ -31,8 +31,6 @@ private:
 	bool				is_empty		() const;
 	void				set_name		(std::string name);
 
-	void				set_parent		(const tree_node_t *parent);
-
 	T					*get			(std::string path, bool create);
 	const T				*get			(std::string path) const;
 
@@ -40,6 +38,8 @@ private:
 
 protected:
 	void				destruct		();
+	void				set_parent		(const tree_node_t *parent);
+	virtual T			*generate		();
 
 public:
 	/*constructor*/		tree_node_t		(const tree_node_t *parent = NULL);
@@ -139,6 +139,12 @@ template <class T>
 T *tree_node_t<T>::generate(std::string path)
 {
 	return get(path, true);
+}
+
+template <class T>
+T *tree_node_t<T>::generate()
+{
+	return new T(this);
 }
 
 template <class T>
@@ -245,7 +251,7 @@ T *tree_node_t<T>::get(std::string path, bool create)
 			return NULL;
 		}
 
-		child_id = insert(name, new T(this));
+		child_id = insert(name, generate());
 	}
 	return children[child_id]->get(rest_of_path, create);
 }
