@@ -31,8 +31,8 @@ private:
 	bool				is_empty		() const;
 	void				set_name		(std::string name);
 
-	T					*get			(std::string path, bool create);
-	const T				*get			(std::string path) const;
+	virtual T			*get			(std::string path, bool create);
+	virtual const T		*get			(std::string path) const;
 
 	bool				destructed;
 
@@ -64,6 +64,7 @@ public:
 
 	virtual children_t	get_children	() const;
 
+	// refactor to (bool find(std::string name, size_type id);)
 	typename children_t::size_type	find		(std::string name) const;
 
 
@@ -242,7 +243,6 @@ T *tree_node_t<T>::get(std::string path, bool create)
 	std::string name, rest_of_path;
 	extract_next_level_name(path, name, rest_of_path);
 
-	//typename children_t::const_iterator it = children.find(name);
 	typename children_t::size_type child_id = find(name);
 	if(child_id >= children.size())
 	{
