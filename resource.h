@@ -57,14 +57,14 @@ public:
 		}
 	}
 
-	void					add_listener				(property_listener *l)
+	virtual void			add_listener				(property_listener *l)
 	{
 		listeners.insert(l);
 		l->add_property(this);
 		l->updated(this);
 	}
 
-	void					remove_listener				(property_listener *l)
+	virtual void			remove_listener				(property_listener *l)
 	{
 		listeners.erase(l);
 		l->remove_property(this);
@@ -97,6 +97,11 @@ protected:
 		{
 			(*it)->updated(this);
 		}
+	}
+
+	const listeners_t		&get_listeners				() const
+	{
+		return listeners;
 	}
 };
 
