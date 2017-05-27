@@ -85,18 +85,18 @@ public:
 		return res;
 	}
 
-protected:
-	void					set_type					(std::string type)
-	{
-		this->type = type;
-	}
-
 	void					notify_change				()
 	{
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
 			(*it)->updated(this);
 		}
+	}
+
+protected:
+	void					set_type					(std::string type)
+	{
+		this->type = type;
 	}
 
 	const listeners_t		&get_listeners				() const
@@ -124,9 +124,15 @@ public:
 		return value_t();
 	}
 
-	virtual void			set_value					(const value_t &/*value*/)
+	virtual void			set_value					(const value_t &value)
 	{
+		sync_value(value);
 		notify_change();
+	}
+
+	virtual void			sync_value					(const value_t &value)
+	{
+		//
 	}
 
 	virtual void			value_changed				()
@@ -181,10 +187,9 @@ public:
 		return (owner->*get)();
 	}
 
-	void					set_value					(const value_t &v)
+	void					sync_value					(const value_t &v)
 	{
 		(owner->*set)(v);
-		property<value_t>::notify_change();
 	}
 
 	using property<value_t>::operator =;
@@ -221,10 +226,9 @@ public:
 		return owner->*ptr;
 	}
 
-	void					set_value					(const value_t &v)
+	void					sync_value					(const value_t &v)
 	{
 		owner->*ptr = v;
-		property<value_t>::notify_change();
 	}
 
 	using property<value_t>::operator =;
@@ -255,10 +259,9 @@ public:
 		return value;
 	}
 
-	void					set_value					(const value_t &v)
+	void					sync_value					(const value_t &v)
 	{
 		value = v;
-		property<value_t>::notify_change();
 	}
 
 	using property<value_t>::operator =;
