@@ -1,28 +1,13 @@
 #pragma once
 
-#include <set>
 #include <vector>
 #include <string>
 #include <typeinfo>
 
-class property_base;
+#include "property_listener.h"
 
 template <class value_t>
 class property;
-
-class property_listener
-{
-	typedef std::set<property_base *>		properties_t;
-	properties_t							properties;
-
-public:
-	/*constructor*/					property_listener			();
-	virtual /*destructor*/			~property_listener			();
-
-	void							add_property				(property_base *p);
-	void							remove_property				(property_base *p);
-	virtual void					updated						(property_base *prop) = 0;
-};
 
 class resource;
 
@@ -130,7 +115,7 @@ public:
 		notify_change();
 	}
 
-	virtual void			sync_value					(const value_t &value)
+	virtual void			sync_value					(const value_t &/*value*/)
 	{
 		//
 	}
