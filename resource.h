@@ -350,7 +350,7 @@ public:
 		return props;
 	}
 
-	property_base			*add_property				(property_base *p)
+	virtual property_base	*add_property				(property_base *p)
 	{
 		props.push_back(p);
 		p->set_resource(this);
