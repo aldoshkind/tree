@@ -9,11 +9,16 @@
 
 /*destructor*/ property_listener::~property_listener()
 {
-	std::lock_guard<decltype(mutex)> lock(mutex);
+	mutex.lock();
 	for(properties_t::iterator it = properties.begin() ; it != properties.end() ; ++it)
 	{
-		(*it)->remove_listener(this);
+		property_base *prop = *it;
+		properties.erase(it);
+		mutex.unlock();
+		prop->remove_listener(this);
+		mutex.lock();
 	}
+	mutex.unlock();
 }
 
 void property_listener::add_property(property_base *p)
