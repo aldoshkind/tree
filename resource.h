@@ -145,15 +145,10 @@ public:
 template <class owner_t, class value_t>
 class property_get_set : public property<value_t>
 {
+public:
 	typedef void (owner_t::*set_t)(value_t);
 	typedef value_t (owner_t::*get_t)() const;
 
-	get_t					get;
-	set_t					set;
-
-	owner_t					*owner;
-
-public:
 	/*constructor*/			property_get_set			(std::string name, owner_t *owner, get_t g, set_t s) : property<value_t>(name)
 	{
 		get = g;
@@ -169,15 +164,28 @@ public:
 
 	value_t					get_value						() const
 	{
+		if(get == NULL)
+		{
+			return value_t();
+		}
 		return (owner->*get)();
 	}
 
 	void					sync_value					(const value_t &v)
 	{
+		if(set == NULL)
+		{
+			return;
+		}
 		(owner->*set)(v);
 	}
 
 	using property<value_t>::operator =;
+private:
+	get_t					get;
+	set_t					set;
+
+	owner_t					*owner;
 };
 
 
