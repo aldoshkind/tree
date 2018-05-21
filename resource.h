@@ -78,6 +78,11 @@ public:
 		}
 	}
 
+	virtual void			set_value					(property_base */*prop*/)
+	{
+		//
+	}
+
 protected:
 	void					set_type					(std::string type)
 	{
@@ -115,6 +120,15 @@ public:
 		notify_change();
 	}
 
+	virtual void			set_value					(property_base *prop)
+	{
+		property<value_t> *pop = dynamic_cast<property<value_t> *>(prop);
+		if(pop != NULL)
+		{
+			set_value(*pop);
+		}
+	}
+
 	virtual void			sync_value					(const value_t &/*value*/)
 	{
 		//
@@ -146,7 +160,7 @@ template <class owner_t, class value_t>
 class property_get_set : public property<value_t>
 {
 public:
-	typedef void (owner_t::*set_t)(value_t);
+	typedef void (owner_t::*set_t)(const value_t &_t);
 	typedef value_t (owner_t::*get_t)() const;
 
 	/*constructor*/			property_get_set			(std::string name, owner_t *owner, get_t g, set_t s) : property<value_t>(name)
@@ -358,7 +372,7 @@ public:
 		return props;
 	}
 
-	property_base			*add_property				(property_base *p)
+	virtual property_base	*add_property				(property_base *p)
 	{
 		props.push_back(p);
 		p->set_resource(this);

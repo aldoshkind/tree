@@ -197,7 +197,6 @@ void Widget::slot_property_change(QString name, double value)
 	}
 
 	double_widgets[name]->setText(QString("%0 = %1").arg(name).arg(value));
-	qDebug() << name << value;
 }
 
 void Widget::slot_nondouble_property(QString text)
