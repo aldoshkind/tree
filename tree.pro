@@ -11,16 +11,19 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = tree
 TEMPLATE = app
 
+CONFIG += c++11
+
+QMAKE_CXXFLAGS += -std=c++11
 
 SOURCES += main.cpp\
-        widget.cpp \
     filepath_utils.cpp \
-    resource.cpp
+    resource.cpp \
+    tree_node.cpp \
+    property_listener.cpp
 
-HEADERS  += widget.h \
+HEADERS  += \
     filepath_utils.h \
     tree_node.h \
-    node.h \
     resource.h \
-    event_printer.h \
-    sinus_generator.h
+    cnode.h \
+    property_listener.h

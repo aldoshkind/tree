@@ -16,7 +16,6 @@ class property_base
 	typedef std::set<property_listener *>	listeners_t;
 	listeners_t								listeners;
 
-	std::string					name;
 	std::string					type;
 
 	resource					*res;
@@ -29,7 +28,7 @@ class property_base
 	friend class resource;
 
 public:
-	/*constructor*/			property_base				(std::string n) : name(n)
+	/*constructor*/			property_base				()
 	{
 		res = NULL;
 	}
@@ -53,11 +52,6 @@ public:
 	{
 		listeners.erase(l);
 		l->remove_property(this);
-	}
-
-	std::string				get_name					() const
-	{
-		return name;
 	}
 
 	std::string				get_type					() const
@@ -99,7 +93,7 @@ template <class value_t>
 class property : public property_base
 {
 public:
-	/*constructor*/			property					(std::string n) : property_base(n)
+	/*constructor*/			property					() : property_base()
 	{
 		set_type(typeid(value_t).name());
 	}
@@ -251,7 +245,7 @@ class property_value : public property<value_t>
 	value_t					value;
 
 public:
-	/*constructor*/			property_value					(std::string name) : property<value_t>(name), value()
+	/*constructor*/			property_value					() : property<value_t>(), value()
 	{
 		//
 	}
@@ -272,143 +266,4 @@ public:
 	}
 
 	using property<value_t>::operator =;
-};
-
-
-
-class resource
-{
-public:
-	class new_property_listener;
-private:
-
-	typedef std::set<new_property_listener *>	listeners_t;
-	listeners_t									listeners;
-
-	/*constructor*/			resource			(const resource &)
-	{
-		//
-	}
-
-public:
-	typedef std::vector<property_base *>		props_t;
-
-	class new_property_listener
-	{
-		typedef std::set<resource *>		resources_t;
-		resources_t							resources;
-	public:
-		/*constructor*/			new_property_listener			()
-		{
-			//
-		}
-
-		virtual /*destructor*/	~new_property_listener			()
-		{
-			for(resources_t::iterator it = resources.begin() ; it != resources.end() ; ++it)
-			{
-				(*it)->remove_listener(this);
-			}
-		}
-
-		void					remove_resource					(resource *r)
-		{
-			resources.erase(r);
-		}
-
-		void					add_resource					(resource *r)
-		{
-			resources.insert(r);
-		}
-
-		virtual void			new_property					(resource *r, property_base *) = 0;
-		void					unsubscribe						(resource *r = NULL)
-		{
-			if(r == NULL)
-			{
-				for(resources_t::iterator it = resources.begin() ; it != resources.end() ; ++it)
-				{
-					(*it)->remove_listener(this);
-				}
-				resources.clear();
-			}
-			else
-			{
-				r->remove_listener(this);
-				resources.erase(r);
-			}
-		}
-	};
-
-	/*constructor*/			resource			()
-	{
-		//
-	}
-
-	virtual /*destructor*/	~resource			()
-	{
-		for(listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
-		{
-			(*it)->remove_resource(this);
-		}
-	}
-
-	void					remove_listener		(new_property_listener *l)
-	{
-		listeners.erase(l);
-	}
-
-	void					add_listener		(new_property_listener *l)
-	{
-		listeners.insert(l);
-		for(props_t::size_type i = 0 ; i < props.size() ; i += 1)
-		{
-			l->new_property(this, props[i]);
-		}
-	}
-
-	props_t					get_properties				() const
-	{
-		return props;
-	}
-
-	virtual property_base	*add_property				(property_base *p)
-	{
-		props.push_back(p);
-		p->set_resource(this);
-		for(listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
-		{
-			(*it)->new_property(this, p);
-		}
-		return p;
-	}
-
-	const property_base		*get_property				(const std::string &name) const
-	{
-		for(props_t::size_type i = 0 ; i < props.size() ; i += 1)
-		{
-			const property_base * const &prop = props[i];
-			if(prop->get_name() == name)
-			{
-				return prop;
-			}
-		}
-		return nullptr;
-	}
-
-	property_base			*get_property				(const std::string &name)
-	{
-		for(props_t::size_type i = 0 ; i < props.size() ; i += 1)
-		{
-			property_base *&prop = props[i];
-			if(prop->get_name() == name)
-			{
-				return prop;
-			}
-		}
-		return nullptr;
-	}
-
-private:
-	props_t					props;
 };
