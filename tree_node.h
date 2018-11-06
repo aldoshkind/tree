@@ -36,6 +36,8 @@ private:
 
 	bool				destructed;
 
+	std::string			type;
+
 protected:
 	void				destruct		();
 	void				set_parent		(const tree_node_t *parent);
@@ -60,6 +62,16 @@ public:
 	type_as		*at_as			(std::string path)
 	{
 		return dynamic_cast<type_as *>(at(path));
+	}
+
+	void set_type(const std::string &type)
+	{
+		this->type = type;
+	}
+
+	std::string get_type() const
+	{
+		return type;
 	}
 
 
