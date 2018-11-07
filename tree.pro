@@ -25,5 +25,5 @@ HEADERS  += \
     filepath_utils.h \
     tree_node.h \
     resource.h \
-    cnode.h \
-    property_listener.h
+    property_listener.h \
+    tree_node_inherited.h

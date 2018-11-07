@@ -1,6 +1,6 @@
 #include "tree_node.h"
 
-/*constructor*/ tree_node_t::tree_node_t(const tree_node_t *parent)
+/*constructor*/ tree_node::tree_node(const tree_node *parent)
 {
 	this->parent = parent;
 	attached = false;
@@ -8,12 +8,12 @@
 }
 
 
-/*destructor*/ tree_node_t::~tree_node_t()
+/*destructor*/ tree_node::~tree_node()
 {
 	destruct();
 }
 
-void tree_node_t::destruct()
+void tree_node::destruct()
 {
 	if(destructed == true)
 	{
@@ -44,18 +44,18 @@ void tree_node_t::destruct()
 	}
 }
 
-tree_node_t *tree_node_t::generate(std::string path)
+tree_node *tree_node::generate(std::string path)
 {
 	return get(path, true);
 }
 
-tree_node_t *tree_node_t::generate()
+tree_node *tree_node::generate()
 {
 #warning
-	return new tree_node_t(this);
+	return new tree_node(this);
 }
 
-typename tree_node_t::children_t::size_type tree_node_t::insert(std::string name, tree_node_t *obj, typename children_t::size_type after)
+typename tree_node::children_t::size_type tree_node::insert(std::string name, tree_node *obj, typename children_t::size_type after)
 {
 	if(after >= children.size())
 	{
@@ -80,13 +80,13 @@ typename tree_node_t::children_t::size_type tree_node_t::insert(std::string name
 	return children.size() - 1;
 }
 
-typename tree_node_t::children_t::size_type tree_node_t::insert(std::string name, tree_node_t *obj, std::string after, bool append)
+typename tree_node::children_t::size_type tree_node::insert(std::string name, tree_node *obj, std::string after, bool append)
 {
 	obj->attached = !append;
 	return insert(name, obj, find(after));
 }
 
-tree_node_t *tree_node_t::attach(std::string path, tree_node_t *obj, bool append)
+tree_node *tree_node::attach(std::string path, tree_node *obj, bool append)
 {
 	if(obj == NULL)
 	{
@@ -95,13 +95,13 @@ tree_node_t *tree_node_t::attach(std::string path, tree_node_t *obj, bool append
 
 	std::string branch, name;
 	extract_last_level_name(path, branch, name);
-	tree_node_t *par = get(branch, true);
+	tree_node *par = get(branch, true);
 	if(par == NULL)
 	{
 		return NULL;
 	}
 
-	tree_node_t *item = par->get(name, false);
+	tree_node *item = par->get(name, false);
 	if(item == NULL)
 	{
 		obj->attached = !append;
@@ -112,17 +112,17 @@ tree_node_t *tree_node_t::attach(std::string path, tree_node_t *obj, bool append
 	return item;
 }
 
-tree_node_t *tree_node_t::at(std::string path)
+tree_node *tree_node::at(std::string path)
 {
 	return get(path, false);
 }
 
-const tree_node_t *tree_node_t::at(std::string path) const
+const tree_node *tree_node::at(std::string path) const
 {
 	return get(path);
 }
 
-tree_node_t *tree_node_t::get(std::string path, bool create)
+tree_node *tree_node::get(std::string path, bool create)
 {
 	std::string::size_type begin = path.find_first_not_of('/');
 	if((begin != 0) && (begin != std::string::npos))
@@ -151,7 +151,7 @@ tree_node_t *tree_node_t::get(std::string path, bool create)
 	return children[child_id]->get(rest_of_path, create);
 }
 
-const tree_node_t *tree_node_t::get(std::string path) const
+const tree_node *tree_node::get(std::string path) const
 {
 	std::string::size_type begin = path.find_first_not_of('/');
 	if((begin != 0) && (begin != std::string::npos))
@@ -175,7 +175,7 @@ const tree_node_t *tree_node_t::get(std::string path) const
 	return children[child_id]->get(rest_of_path);
 }
 
-int tree_node_t::remove(std::string path, bool recursive)
+int tree_node::remove(std::string path, bool recursive)
 {
 	std::string::size_type begin = path.find_first_not_of('/');
 	if((begin != 0) && (begin != std::string::npos))
@@ -194,7 +194,7 @@ int tree_node_t::remove(std::string path, bool recursive)
 		return -1;
 	}
 
-	tree_node_t *child = children[child_id];
+	tree_node *child = children[child_id];
 
 	// если потомок есть, и остальной путь пуст - то удалять потомка
 	if(rest_of_path.size() == 0)
@@ -218,12 +218,12 @@ int tree_node_t::remove(std::string path, bool recursive)
 	return child->remove(rest_of_path, recursive);
 }
 
-bool tree_node_t::is_empty() const
+bool tree_node::is_empty() const
 {
 	return (children.size() == 0);
 }
 
-typename tree_node_t::ls_list_t tree_node_t::ls() const
+typename tree_node::ls_list_t tree_node::ls() const
 {
 	ls_list_t list;
 
@@ -235,13 +235,13 @@ typename tree_node_t::ls_list_t tree_node_t::ls() const
 	return list;
 }
 
-void tree_node_t::set_name(std::string n)
+void tree_node::set_name(std::string n)
 {
 	name = n;
 }
 
 
-void tree_node_t::add_listener(listener_t *l, bool recursive)
+void tree_node::add_listener(listener_t *l, bool recursive)
 {
 	listeners.insert(l);
 	if(recursive == true)
@@ -259,13 +259,13 @@ void tree_node_t::add_listener(listener_t *l, bool recursive)
 }
 
 
-std::string tree_node_t::get_name() const
+std::string tree_node::get_name() const
 {
 	return name;
 }
 
 
-std::string tree_node_t::get_path() const
+std::string tree_node::get_path() const
 {
 	if(parent != NULL)
 	{
@@ -275,19 +275,19 @@ std::string tree_node_t::get_path() const
 }
 
 
-void tree_node_t::set_parent(const tree_node_t *parent)
+void tree_node::set_parent(const tree_node *parent)
 {
 	this->parent = parent;
 }
 
 
-const tree_node_t *tree_node_t::get_parent() const
+const tree_node *tree_node::get_parent() const
 {
 	return parent;
 }
 
 
-typename tree_node_t::children_t::size_type tree_node_t::find(std::string name) const
+typename tree_node::children_t::size_type tree_node::find(std::string name) const
 {
 	for(typename children_t::size_type i = 0 ; i < children.size() ; i += 1)
 	{
@@ -300,7 +300,7 @@ typename tree_node_t::children_t::size_type tree_node_t::find(std::string name) 
 }
 
 
-typename tree_node_t::children_t tree_node_t::get_children() const
+typename tree_node::children_t tree_node::get_children() const
 {
 	return children;
 }
