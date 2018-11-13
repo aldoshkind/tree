@@ -1,14 +1,10 @@
 #pragma once
 
-#include <cxxabi.h>
+#include <typeinfo>
 
 #include "tree_node.h"
 
-std::string demangle(const char *name)
-{
-	int status = 0;
-	return abi::__cxa_demangle(name, 0, 0, &status);
-}
+std::string demangle(const char *name);
 
 template <class T>
 class tree_node_inherited : public tree_node, public T

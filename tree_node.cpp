@@ -44,10 +44,10 @@ void tree_node::destruct()
 	}
 }
 
-tree_node *tree_node::generate(std::string path)
+/*tree_node *tree_node::generate(std::string path)
 {
 	return get(path, true);
-}
+}*/
 
 tree_node *tree_node::generate()
 {

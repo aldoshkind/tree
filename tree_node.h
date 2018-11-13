@@ -14,7 +14,7 @@ class tree_node
 {
 public:
 	class listener_t;
-	typedef std::vector<std::string>	ls_list_t;
+	typedef std::vector<std::string>			ls_list_t;
 	typedef std::vector<tree_node *>			children_t;
 
 private:
@@ -31,9 +31,6 @@ private:
 	bool				is_empty		() const;
 	void				set_name		(std::string name);
 
-	virtual tree_node			*get			(std::string path, bool create);
-	virtual const tree_node		*get			(std::string path) const;
-
 	bool				destructed;
 
 	std::string			type;
@@ -47,7 +44,9 @@ public:
 	/*constructor*/		tree_node		(const tree_node *parent = NULL);
 	virtual /*destructor*/~tree_node	();
 
-	virtual tree_node			*generate		(std::string path);
+	virtual tree_node			*get			(std::string path, bool create);
+	virtual const tree_node		*get			(std::string path) const;
+	//virtual tree_node			*generate		(std::string path);
 	virtual tree_node			*attach			(std::string path, tree_node *obj, bool append = true);
 	virtual tree_node			*at				(std::string path);
 	virtual const tree_node		*at				(std::string path) const;
