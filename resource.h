@@ -9,8 +9,6 @@
 template <class value_t>
 class property;
 
-class resource;
-
 class property_base
 {
 	typedef std::set<property_listener *>	listeners_t;
@@ -18,19 +16,10 @@ class property_base
 
 	std::string					type;
 
-	resource					*res;
-
-	void						set_resource			(resource *res)
-	{
-		this->res = res;
-	}
-
-	friend class resource;
-
 public:
 	/*constructor*/			property_base				()
 	{
-		res = NULL;
+		//
 	}
 
 	virtual /*destructor*/	~property_base				()
@@ -57,11 +46,6 @@ public:
 	std::string				get_type					() const
 	{
 		return type;
-	}
-
-	resource				*get_resource				() const
-	{
-		return res;
 	}
 
 	void					notify_change				()

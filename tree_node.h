@@ -46,8 +46,13 @@ public:
 
 	virtual tree_node			*get			(std::string path, bool create);
 	virtual const tree_node		*get			(std::string path) const;
-	//virtual tree_node			*generate		(std::string path);
+
+
 	virtual tree_node			*attach			(std::string path, tree_node *obj, bool append = true);
+	virtual int					remove			(std::string path, bool recursive = false);
+
+
+
 	virtual tree_node			*at				(std::string path);
 	virtual const tree_node		*at				(std::string path) const;
 
@@ -74,7 +79,7 @@ public:
 	}
 
 
-	virtual int			remove			(std::string path, bool recursive = false);
+
 	virtual typename children_t::size_type		insert			(std::string name, tree_node *obj, typename children_t::size_type after = std::numeric_limits<typename children_t::size_type>::max());
 	virtual typename children_t::size_type		insert			(std::string name, tree_node *obj, std::string after, bool generate = true);
 
