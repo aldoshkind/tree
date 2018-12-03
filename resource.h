@@ -13,6 +13,10 @@ class property_base
 {
 	typedef std::set<property_listener *>	listeners_t;
 	listeners_t								listeners;
+	std::recursive_mutex					listeners_mutex;
+	
+	// указатель на слушателя, который обновляется в текущий момент. Нужно чтобы избежать рекурсии
+	property_listener *listener_being_updated = nullptr;
 
 	std::string					type;
 
@@ -24,6 +28,7 @@ public:
 
 	virtual /*destructor*/	~property_base				()
 	{
+		std::lock_guard<std::recursive_mutex> lock(listeners_mutex);
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
 			remove_listener(*it);
@@ -32,6 +37,7 @@ public:
 
 	virtual void			add_listener				(property_listener *l)
 	{
+		std::lock_guard<std::recursive_mutex> lock(listeners_mutex);
 		listeners.insert(l);
 		l->add_property(this);
 		l->updated(this);
@@ -39,6 +45,7 @@ public:
 
 	virtual void			remove_listener				(property_listener *l)
 	{
+		std::lock_guard<std::recursive_mutex> lock(listeners_mutex);
 		listeners.erase(l);
 		l->remove_property(this);
 	}
@@ -50,10 +57,20 @@ public:
 
 	void					notify_change				()
 	{
-		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+		std::lock_guard<std::recursive_mutex> lock(listeners_mutex);
+		//for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+		//printf("listners size is %d\n", listeners.size());
+		for(const auto listener : listeners)
 		{
-			(*it)->updated(this);
+			if(listener_being_updated == listener)
+			{
+		//		printf("listener is already being updated\n");
+				continue;
+			}
+			listener_being_updated = listener;
+			listener->updated(this);
 		}
+		listener_being_updated = nullptr;
 	}
 
 	virtual void			set_value					(property_base */*prop*/)
@@ -141,7 +158,7 @@ public:
 	typedef void (owner_t::*set_t)(const value_t &_t);
 	typedef value_t (owner_t::*get_t)() const;
 
-	/*constructor*/			property_get_set			(std::string name, owner_t *owner, get_t g, set_t s) : property<value_t>(name)
+	/*constructor*/			property_get_set			(owner_t *owner, get_t g, set_t s) : property<value_t>()
 	{
 		get = g;
 		set = s;
