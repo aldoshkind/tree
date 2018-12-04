@@ -15,8 +15,8 @@ class property_base
 	listeners_t								listeners;
 	std::recursive_mutex					listeners_mutex;
 	
-	// указатель на слушателя, который обновляется в текущий момент. Нужно чтобы избежать рекурсии
-	property_listener *listener_being_updated = nullptr;
+	bool						is_notification_in_process = false;
+	std::mutex					notification_mutex;
 
 	std::string					type;
 
@@ -57,20 +57,22 @@ public:
 
 	void					notify_change				()
 	{
+		std::unique_lock<std::mutex> notification_lock(notification_mutex);
+		if(is_notification_in_process == true)
+		{
+			return;
+		}
+		is_notification_in_process = true;
+		
 		std::lock_guard<std::recursive_mutex> lock(listeners_mutex);
-		//for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
-		//printf("listners size is %d\n", listeners.size());
+		
+		notification_lock.unlock();
+		
 		for(const auto listener : listeners)
 		{
-			if(listener_being_updated == listener)
-			{
-		//		printf("listener is already being updated\n");
-				continue;
-			}
-			listener_being_updated = listener;
 			listener->updated(this);
 		}
-		listener_being_updated = nullptr;
+		is_notification_in_process = false;
 	}
 
 	virtual void			set_value					(property_base */*prop*/)

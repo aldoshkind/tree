@@ -14,4 +14,6 @@ public:
 	{
 		tree_node::set_type(demangle(typeid(T).name()));
 	}
+	
+	using T::operator =;
 };
