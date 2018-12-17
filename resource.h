@@ -96,6 +96,8 @@ template <class value_t>
 class property : public property_base
 {
 public:
+	typedef value_t value_type;
+	
 	/*constructor*/			property					() : property_base()
 	{
 		set_type(typeid(value_t).name());
@@ -269,4 +271,48 @@ public:
 	}
 
 	using property<value_t>::operator =;
+};
+
+
+
+class enum_base
+{
+
+};
+
+template <class base_t>
+class enumeration : public enum_base, public base_t
+{
+public:
+	typedef std::set<typename base_t::value_type> allowed_values_t;
+	allowed_values_t allowed_values;
+	typedef typename base_t::value_type value_type;
+	
+	void set_value(const value_type &v) override
+	{
+		if(allowed_values.find(v) == allowed_values.end())
+		{
+			return;
+		}
+		base_t::set_value(v);
+	}
+	
+	void			sync_value					(const value_type &v)
+	{
+		if(allowed_values.find(v) == allowed_values.end())
+		{
+			return;
+		}
+		base_t::sync_value(v);
+	}
+	
+	allowed_values_t get_options() const
+	{
+		return allowed_values;
+	}
+	
+	void add_option(const value_type &v)
+	{
+		allowed_values.insert(v);
+	}
 };
