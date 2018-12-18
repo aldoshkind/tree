@@ -288,22 +288,26 @@ public:
 	allowed_values_t allowed_values;
 	typedef typename base_t::value_type value_type;
 	
+	template<class ... types>
+	enumeration(types ... args) : base_t(args ...)
+	{
+		//
+	}
+	
 	void set_value(const value_type &v) override
 	{
-		if(allowed_values.find(v) == allowed_values.end())
+		if(is_acceptable(v))
 		{
-			return;
+			base_t::set_value(v);
 		}
-		base_t::set_value(v);
 	}
 	
 	void			sync_value					(const value_type &v)
 	{
-		if(allowed_values.find(v) == allowed_values.end())
+		if(is_acceptable(v))
 		{
-			return;
+			base_t::sync_value(v);
 		}
-		base_t::sync_value(v);
 	}
 	
 	allowed_values_t get_options() const
@@ -315,4 +319,11 @@ public:
 	{
 		allowed_values.insert(v);
 	}
+	
+	bool is_acceptable(const value_type &v)
+	{
+		return allowed_values.find(v) != allowed_values.end();
+	}
+	
+	using base_t::operator =;
 };
