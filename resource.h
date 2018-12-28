@@ -250,7 +250,7 @@ class property_value : public property<value_t>
 	value_t					value;
 
 public:
-	/*constructor*/			property_value					() : property<value_t>(), value()
+	/*constructor*/			property_value					(const value_t &val = value_t()) : property<value_t>(), value(val)
 	{
 		//
 	}
