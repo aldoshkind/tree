@@ -175,6 +175,32 @@ const tree_node *tree_node::get(std::string path) const
 	return children[child_id]->get(rest_of_path);
 }
 
+void tree_node::clear_listeners()
+{
+    listeners.clear();
+    recursive_listeners.clear();
+}
+
+int tree_node::detach(std::string name)
+{
+    typename children_t::size_type child_id = find(name);
+
+    // если нет такого потомка, то ошибка
+    if(child_id >= children.size())
+    {
+        return -1;
+    }
+
+    tree_node* child = children[child_id];
+    children.erase(children.begin() + child_id);
+    child->set_parent(nullptr);
+    child->clear_listeners();
+    for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+    {
+        (*it)->child_detached(child);
+    }
+}
+
 int tree_node::remove(std::string path, bool recursive)
 {
 	std::string::size_type begin = path.find_first_not_of('/');
@@ -202,7 +228,7 @@ int tree_node::remove(std::string path, bool recursive)
 		// если удаление рекурсивное, или потомок пустой - то удаляем, иначе ошибка
 		if(recursive || (child->is_empty() == true))
 		{
-			if(child->attached == false)
+            if(child->attached == false)
 			{
 				delete child;
 			}
@@ -239,7 +265,6 @@ void tree_node::set_name(std::string n)
 {
 	name = n;
 }
-
 
 void tree_node::add_listener(listener_t *l, bool recursive)
 {

@@ -47,11 +47,11 @@ public:
 	virtual tree_node			*get			(std::string path, bool create);
 	virtual const tree_node		*get			(std::string path) const;
 
+    virtual void                clear_listeners();
 
-	virtual tree_node			*attach			(std::string path, tree_node *obj, bool append = true);
-	virtual int					remove			(std::string path, bool recursive = false);
-
-
+    virtual int                 detach			(std::string path);
+    virtual tree_node			*attach			(std::string path, tree_node *obj, bool append = true);
+    virtual int					remove			(std::string path, bool recursive = false);
 
 	virtual tree_node			*at				(std::string path);
 	virtual const tree_node		*at				(std::string path) const;
@@ -103,8 +103,9 @@ public:
 	public:
 		/*constructor*/				listener_t					() {}
 		virtual /*destructor*/		~listener_t					() {}
-		virtual void				child_added								(tree_node *) {}
-		virtual void				child_removed							(tree_node *, std::string/* name*/) {}
+        virtual void				child_added								(tree_node *) {}
+        virtual void				child_removed							(tree_node *, std::string/* name*/) {}
+        virtual void				child_detached							(tree_node *) {}
 		virtual void				on_remove								(tree_node *) {}
 	};
 };
