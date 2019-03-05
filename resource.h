@@ -302,9 +302,9 @@ public:
 		}
 	}
 	
-	void			sync_value					(const value_type &v)
+    void sync_value(const value_type &v)
 	{
-		if(is_acceptable(v))
+        if (is_acceptable(v))
 		{
 			base_t::sync_value(v);
 		}
@@ -318,7 +318,23 @@ public:
 	void add_option(const value_type &v)
 	{
 		allowed_values.insert(v);
+        base_t::notify_change();
 	}
+
+    void clear_options()
+    {
+        allowed_values.clear();
+        base_t::notify_change();
+    }
+
+    void remove_option(const value_type &v)
+    {
+        if (is_acceptable(v))
+        {
+            allowed_values.erase(v);
+            base_t::notify_change();
+        }
+    }
 	
 	bool is_acceptable(const value_type &v)
 	{
