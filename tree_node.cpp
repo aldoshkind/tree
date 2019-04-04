@@ -1,9 +1,11 @@
 #include "tree_node.h"
 
+#include <algorithm>
+
 /*constructor*/ tree_node::tree_node(const tree_node *parent)
 {
 	this->parent = parent;
-	attached = false;
+	owned = false;
 	destructed = false;
 }
 
@@ -23,13 +25,17 @@ void tree_node::destruct()
 
 	for(typename children_t::size_type i = 0 ; i < children.size() ; i += 1)
 	{
-		if(children[i]->attached == false)
+		if(children[i]->owned == true)
 		{
+			children[i]->set_parent(NULL);
 			delete children[i];
 		}
 		else
 		{
-			children[i]->set_parent(NULL);
+			if(children[i]->get_parent() == this)
+			{
+				children[i]->set_parent(NULL);
+			}
 			// should we report detached to child?
 		}
 		const std::string &name = children[i]->get_name();
@@ -65,8 +71,11 @@ typename tree_node::children_t::size_type tree_node::insert(std::string name, tr
 	{
 		children.insert(children.begin() + after, obj);
 	}
-	obj->set_parent(this);
-	obj->set_name(name);
+	if(obj->get_parent() == nullptr)
+	{
+		obj->set_parent(this);
+		obj->set_name(name);
+	}
 
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
@@ -80,13 +89,13 @@ typename tree_node::children_t::size_type tree_node::insert(std::string name, tr
 	return children.size() - 1;
 }
 
-typename tree_node::children_t::size_type tree_node::insert(std::string name, tree_node *obj, std::string after, bool append)
+typename tree_node::children_t::size_type tree_node::insert(std::string name, tree_node *obj, std::string after, bool grant_ownership)
 {
-	obj->attached = !append;
+	obj->owned = grant_ownership;
 	return insert(name, obj, find(after));
 }
 
-tree_node *tree_node::attach(std::string path, tree_node *obj, bool append)
+tree_node *tree_node::attach(std::string path, tree_node *obj, bool grant_ownership)
 {
 	if(obj == NULL)
 	{
@@ -104,7 +113,7 @@ tree_node *tree_node::attach(std::string path, tree_node *obj, bool append)
 	tree_node *item = par->get(name, false);
 	if(item == NULL)
 	{
-		obj->attached = !append;
+		obj->owned = grant_ownership;
 		par->insert(name, obj);
 		item = obj;
 	}
@@ -181,24 +190,53 @@ void tree_node::clear_listeners()
     recursive_listeners.clear();
 }
 
-int tree_node::detach(std::string name)
+tree_node *tree_node::detach(std::string name)
 {
     typename children_t::size_type child_id = find(name);
 
     // если нет такого потомка, то ошибка
     if(child_id >= children.size())
     {
-        return -1;
+        return nullptr;
     }
 
     tree_node* child = children[child_id];
     children.erase(children.begin() + child_id);
-    child->set_parent(nullptr);
-    child->clear_listeners();
+	if(child->get_parent() == this)
+	{
+		child->set_parent(nullptr);
+		child->clear_listeners();
+	}
     for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
     {
         (*it)->child_detached(child);
     }
+	
+	return child;
+}
+
+tree_node *tree_node::detach(tree_node *child)
+{
+	auto found = std::find(children.begin(), children.end(), child);
+	
+    // если нет такого потомка, то ошибка
+    if(found == children.end())
+    {
+        return nullptr;
+    }
+
+    children.erase(found, found + 1);
+	if(child->get_parent() == this)
+	{
+		child->set_parent(nullptr);
+		child->clear_listeners();
+	}
+    for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+    {
+        (*it)->child_detached(child);
+    }
+	
+	return child;
 }
 
 int tree_node::remove(std::string path, bool recursive)
@@ -228,7 +266,7 @@ int tree_node::remove(std::string path, bool recursive)
 		// если удаление рекурсивное, или потомок пустой - то удаляем, иначе ошибка
 		if(recursive || (child->is_empty() == true))
 		{
-            if(child->attached == false)
+            if(child->owned == true)
 			{
 				delete child;
 			}
@@ -322,6 +360,19 @@ typename tree_node::children_t::size_type tree_node::find(std::string name) cons
 		}
 	}
 	return std::numeric_limits<typename children_t::size_type>::max();
+}
+
+tree_node *tree_node::find(tree_node *child) const
+{
+	auto found = std::find(children.begin(), children.end(), child);
+	
+    // если нет такого потомка, то ошибка
+    if(found == children.end())
+    {
+        return nullptr;
+    }
+	
+	return *found;
 }
 
 

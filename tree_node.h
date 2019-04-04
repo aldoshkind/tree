@@ -20,7 +20,7 @@ public:
 private:
 	const tree_node	*parent;
 	std::string			name;
-	bool				attached;	// if true - do not destruct
+	bool				owned;	// if true - do not destruct
 
 	children_t											children;
 
@@ -49,8 +49,9 @@ public:
 
     virtual void                clear_listeners();
 
-    virtual int                 detach			(std::string path);
-    virtual tree_node			*attach			(std::string path, tree_node *obj, bool append = true);
+    virtual tree_node *          detach			(std::string path);
+	virtual tree_node *          detach			(tree_node *);
+    virtual tree_node *			attach			(std::string path, tree_node *obj, bool grant_ownership = true);
     virtual int					remove			(std::string path, bool recursive = false);
 
 	virtual tree_node			*at				(std::string path);
@@ -106,6 +107,7 @@ public:
 
 	// refactor to (bool find(std::string name, size_type id);)
 	typename children_t::size_type	find		(std::string name) const;
+	tree_node *						find		(tree_node *) const;
 
 
 	class listener_t
