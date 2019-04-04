@@ -1,6 +1,6 @@
 #include "property_listener.h"
 
-#include "resource.h"
+#include "property.h"
 
 /*constructor*/ property_listener::property_listener()
 {
