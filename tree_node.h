@@ -55,6 +55,16 @@ public:
 
 	virtual tree_node			*at				(std::string path);
 	virtual const tree_node		*at				(std::string path) const;
+	
+	tree_node *					operator[]		(std::string path)
+	{
+		return at(path);
+	}
+	
+	const tree_node *			operator[]		(std::string path) const
+	{
+		return at(path);
+	}
 
 	template<class type_as>
 	const type_as		*at_as			(std::string path) const
