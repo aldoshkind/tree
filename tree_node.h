@@ -29,7 +29,6 @@ private:
 	listeners_t											recursive_listeners;
 
 	bool				is_empty		() const;
-	void				set_name		(std::string name);
 
 	bool				destructed;
 
@@ -43,6 +42,8 @@ protected:
 public:
 	/*constructor*/		tree_node		(const tree_node *parent = NULL);
 	virtual /*destructor*/~tree_node	();
+	
+	void						set_name		(std::string name);
 
 	virtual tree_node			*get			(std::string path, bool create);
 	virtual const tree_node		*get			(std::string path) const;
