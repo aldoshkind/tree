@@ -74,6 +74,10 @@ typename tree_node::children_t::size_type tree_node::insert(std::string name, tr
 	if(obj->get_parent() == nullptr)
 	{
 		obj->set_parent(this);
+	}
+	
+	if(obj->get_parent() == this)
+	{
 		obj->set_name(name);
 	}
 
