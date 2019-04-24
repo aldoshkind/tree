@@ -25,7 +25,7 @@ void tree_node::destruct()
 
 	for(typename children_t::size_type i = 0 ; i < children.size() ; i += 1)
 	{
-		if(children[i]->owned == true)
+		if(children[i]->owned == true && children[i]->get_parent() == this)
 		{
 			children[i]->set_parent(NULL);
 			delete children[i];
@@ -41,7 +41,7 @@ void tree_node::destruct()
 		const std::string &name = children[i]->get_name();
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
-			(*it)->child_removed(this, name);
+			(*it)->child_removed(this, name, children[i]);
 		}
 	}
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
@@ -270,14 +270,14 @@ int tree_node::remove(std::string path, bool recursive)
 		// если удаление рекурсивное, или потомок пустой - то удаляем, иначе ошибка
 		if(recursive || (child->is_empty() == true))
 		{
-            if(child->owned == true)
+            if(child->owned == true && child->get_parent() == this)
 			{
 				delete child;
 			}
 			children.erase(children.begin() + child_id);
 			for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 			{
-				(*it)->child_removed(this, name);
+				(*it)->child_removed(this, name, child);
 			}
 			return 0;
 		}
