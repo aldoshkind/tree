@@ -216,7 +216,7 @@ class property_value_ptr : public property<value_t>
 	owner_t					*owner;
 
 public:
-	/*constructor*/			property_value_ptr			(std::string name, owner_t *owner, value_ptr p) : property<value_t>(name)
+	/*constructor*/			property_value_ptr			(owner_t *owner, value_ptr p) : property<value_t>()
 	{
 		ptr = p;
 		this->owner = owner;
