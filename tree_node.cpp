@@ -83,7 +83,7 @@ typename tree_node::children_t::size_type tree_node::insert(std::string name, tr
 
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
-		(*it)->child_added(obj);
+		(*it)->child_added(this, obj);
 	}
 
 	for(typename listeners_t::iterator it = recursive_listeners.begin() ; it != recursive_listeners.end() ; ++it)
@@ -317,7 +317,7 @@ void tree_node::add_listener(listener_t *l, bool recursive)
 	}
 	for(typename children_t::iterator it = children.begin() ; it != children.end() ; ++it)
 	{
-		l->child_added(*it);
+		l->child_added(this, *it);
 		if(recursive == true)
 		{
 			(*it)->add_listener(l, recursive);

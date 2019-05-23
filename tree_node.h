@@ -116,7 +116,7 @@ public:
 	public:
 		/*constructor*/				listener_t					() {}
 		virtual /*destructor*/		~listener_t					() {}
-        virtual void				child_added								(tree_node *) {}
+        virtual void				child_added								(tree_node */*parent*/, tree_node *) = 0;// {}
         virtual void				child_removed							(tree_node */*parent*/, std::string/* name*/, tree_node */*removed_child*/) {}
         virtual void				child_detached							(tree_node *) {}
 		virtual void				on_remove								(tree_node *) {}
