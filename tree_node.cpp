@@ -213,7 +213,7 @@ tree_node *tree_node::detach(std::string name)
 	}
     for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
     {
-        (*it)->child_detached(child);
+		(*it)->child_removed(this, child->get_name(), child);
     }
 	
 	return child;
@@ -236,8 +236,8 @@ tree_node *tree_node::detach(tree_node *child)
 		child->clear_listeners();
 	}
     for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
-    {
-        (*it)->child_detached(child);
+	{
+		(*it)->child_removed(this, child->get_name(), child);
     }
 	
 	return child;
@@ -324,7 +324,18 @@ void tree_node::add_listener(listener_t *l, bool recursive)
 		}
 	}
 }
-
+void tree_node::remove_listener(listener_t *l, bool recursive = false)
+{
+	listeners.erase(l);
+	recursive_listeners.erase(l);
+	if (recursive)
+	{
+		for (tree_node* child : children)
+		{
+			remove_listener(l, recursive);
+		}
+	}
+}
 
 std::string tree_node::get_name() const
 {
