@@ -98,6 +98,7 @@ public:
 	virtual ls_list_t	ls				() const;
 
 	void				add_listener	(listener_t *, bool recursive = false);
+	void				remove_listener(listener_t *l, bool recursive = false);
 
 	std::string			get_name		() const;
 	std::string			get_path		() const;
@@ -117,8 +118,7 @@ public:
 		/*constructor*/				listener_t					() {}
 		virtual /*destructor*/		~listener_t					() {}
         virtual void				child_added								(tree_node */*parent*/, tree_node *) = 0;// {}
-        virtual void				child_removed							(tree_node */*parent*/, std::string/* name*/, tree_node */*removed_child*/) {}
-        virtual void				child_detached							(tree_node *) {}
+		virtual void				child_removed							(tree_node */*parent*/, std::string/* name*/, tree_node */*removed_child*/) {}
 		virtual void				on_remove								(tree_node *) {}
 	};
 };
