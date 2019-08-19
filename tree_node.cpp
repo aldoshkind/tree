@@ -4,7 +4,7 @@
 
 /*constructor*/ tree_node::tree_node(const tree_node *parent)
 {
-	this->parent = parent;
+	set_parent(parent);
 	owned = false;
 	destructed = false;
 }
@@ -12,42 +12,70 @@
 
 /*destructor*/ tree_node::~tree_node()
 {
+	printf("%s: %s\n", __func__, get_name().c_str());
 	destruct();
 }
 
 void tree_node::destruct()
 {
+	printf("%s: a %s\n", __func__, get_name().c_str());
 	if(destructed == true)
 	{
 		return;
 	}
 	destructed = true;
 
+	//printf("%s: b %s\n", __func__, get_name().c_str());
+	if(get_name() == "jetson")
+	{
+		//printf("jj\n");
+	}
+	printf("%s: %s has %d children\n", __func__, get_name().c_str(), children.size());
 	for(typename children_t::size_type i = 0 ; i < children.size() ; i += 1)
 	{
-		if(children[i]->owned == true && children[i]->get_parent() == this)
+		tree_node *child = children[i];
+		if(child->owned == true && child->get_parent() == this)
 		{
-			children[i]->set_parent(NULL);
-			delete children[i];
+			child->set_parent(NULL);
+			printf("%s: delete own child %s\n", __func__, child->get_name().c_str());
+			delete child;
+			printf("%s: %s's children is of size %d now\n", __func__, get_name().c_str(), children.size());
 		}
 		else
 		{
-			if(children[i]->get_parent() == this)
+			if(child->get_parent() == this)
 			{
-				children[i]->set_parent(NULL);
+				printf("%s: detach child %s\n", __func__, get_name().c_str());
+				child->set_parent(NULL);
+			}
+			else
+			{
+				printf("%s: remove parent from %s whose parent is\"%s\"\n", __func__, child->get_name().c_str(), child->get_parent()->get_name().c_str());
+				child->remove_parent(this);
 			}
 			// should we report detached to child?
 		}
-		const std::string &name = children[i]->get_name();
+		//printf("%s: e %s\n", __func__, get_name().c_str());
+		const std::string &name = child->get_name();
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
-			(*it)->child_removed(this, name, children[i]);
+			//printf("%s: f %s\n", __func__, get_name().c_str());
+			(*it)->child_removed(this, name, child);
 		}
 	}
+	printf("%s: processing children of %s done\n", __func__, get_name().c_str());
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
+		//printf("%s: h %s\n", __func__, get_name().c_str());
 		(*it)->on_remove(this);
 	}
+	for( ; parents.size() != 0 ; )
+	{
+		tree_node *p = *parents.begin();
+		printf("%s: detach from %s\n", __func__, p->get_name().c_str());
+		p->detach(this);
+	}
+	printf("%s: %s destructed\n", __func__, get_name().c_str());
 }
 
 /*tree_node *tree_node::generate(std::string path)
@@ -79,6 +107,11 @@ typename tree_node::children_t::size_type tree_node::insert(std::string name, tr
 	if(obj->get_parent() == this)
 	{
 		obj->set_name(name);
+	}
+	
+	if(obj->get_parent() != nullptr && obj->get_parent() != this)
+	{
+		obj->add_parent(this);
 	}
 
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
@@ -209,7 +242,12 @@ tree_node *tree_node::detach(std::string name)
 	if(child->get_parent() == this)
 	{
 		child->set_parent(nullptr);
+#warning Почему?
 		child->clear_listeners();
+	}
+	else
+	{
+		child->remove_parent(this);
 	}
     for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
     {
@@ -219,6 +257,7 @@ tree_node *tree_node::detach(std::string name)
 	return child;
 }
 
+#warning Копипаста метода выше?
 tree_node *tree_node::detach(tree_node *child)
 {
 	auto found = std::find(children.begin(), children.end(), child);
@@ -234,6 +273,10 @@ tree_node *tree_node::detach(tree_node *child)
 	{
 		child->set_parent(nullptr);
 		child->clear_listeners();
+	}
+	else
+	{
+		child->remove_parent(this);
 	}
     for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
@@ -273,6 +316,10 @@ int tree_node::remove(std::string path, bool recursive)
             if(child->owned == true && child->get_parent() == this)
 			{
 				delete child;
+			}
+			if(child->get_parent() != this)
+			{
+				child->remove_parent(this);
 			}
 			children.erase(children.begin() + child_id);
 			for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
@@ -356,6 +403,14 @@ std::string tree_node::get_path() const
 
 void tree_node::set_parent(const tree_node *parent)
 {
+	if(parent != nullptr)
+	{
+		add_parent(const_cast<tree_node *>(parent));
+	}
+	else
+	{
+		remove_parent(const_cast<tree_node *>(this->parent));
+	}
 	this->parent = parent;
 }
 
@@ -395,4 +450,19 @@ tree_node *tree_node::find(tree_node *child) const
 typename tree_node::children_t tree_node::get_children() const
 {
 	return children;
+}
+
+void tree_node::add_parent(tree_node *parent)
+{
+	parents.insert(parent);
+	if(parent == nullptr)
+	{
+		printf("%s: replace null parent\n", __func__);
+		this->parent = parent;
+	}
+}
+
+void tree_node::remove_parent(tree_node *parent)
+{
+	parents.erase(parent);
 }

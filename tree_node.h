@@ -19,6 +19,8 @@ public:
 
 private:
 	const tree_node	*parent;
+	typedef std::set<tree_node *> parents_t;
+	parents_t parents;
 	std::string			name;
 	bool				owned;	// if true - do destruct
 
@@ -36,7 +38,9 @@ private:
 
 protected:
 	void				destruct		();
-	void				set_parent		(const tree_node *parent);
+	
+	void				add_parent		(tree_node *parent);
+	void				remove_parent	(tree_node *parent);
 	virtual tree_node			*generate		();
 
 public:
@@ -57,6 +61,8 @@ public:
 
 	virtual tree_node			*at				(std::string path);
 	virtual const tree_node		*at				(std::string path) const;
+	
+	void				set_parent		(const tree_node *parent);
 	
 	tree_node *					operator[]		(std::string path)
 	{
