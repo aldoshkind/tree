@@ -321,10 +321,10 @@ int tree_node::remove(std::string path, bool recursive)
 			{
 				child->remove_parent(this);
 				children.erase(children.begin() + child_id);
-			}
-			for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
-			{
-				(*it)->child_removed(this, name, child);
+				for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+				{
+					(*it)->child_removed(this, name, child);
+				}
 			}
 			return 0;
 		}
