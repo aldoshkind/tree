@@ -116,6 +116,7 @@ public:
 	tree_node *get_parent() const;
 
 	virtual children_map_t get_children() const;
+	virtual children_name_order_t get_children_order() const;
 
 	class listener_t
 	{

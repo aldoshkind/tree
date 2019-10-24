@@ -104,6 +104,12 @@ bool tree_node::insert(std::string name, tree_node *obj, bool grant_ownership)
 	{
 		obj->add_parent(this);
 	}
+	
+	if(obj->get_parent() == nullptr)
+	{
+		obj->set_parent(this);
+		obj->set_name(name);
+	}
 
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
@@ -451,4 +457,9 @@ tree_node::string_list_t tree_node::get_names_of(const tree_node *n) const
 	}
 	
 	return names;
+}
+
+tree_node::children_name_order_t tree_node::get_children_order() const
+{
+	return children_name_order;
 }
