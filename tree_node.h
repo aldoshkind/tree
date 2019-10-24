@@ -4,6 +4,7 @@
 
 #include <map>
 #include <set>
+#include <list>
 #include <string>
 #include <limits>
 #include <vector>
@@ -14,18 +15,22 @@ class tree_node
 {
 public:
 	class listener_t;
-	typedef std::vector<std::string>			ls_list_t;
-	typedef std::vector<tree_node *>			children_t;
+	
+	typedef std::list<std::string> string_list_t;
+	
+	typedef string_list_t children_name_order_t;
+	typedef std::map<std::string, tree_node *> children_map_t;
 
-private:
-	const tree_node	*parent;
-	typedef std::set<tree_node *> parents_t;
+//private:
+	tree_node *parent;
+	typedef std::map<tree_node *, size_t> parents_t;
 	parents_t parents;
 	std::string			name;
 	bool				owned;	// if true - do destruct
 
-	children_t											children;
-
+	children_name_order_t								children_name_order;
+	children_map_t										children_map;
+	
 	typedef std::set<listener_t *>						listeners_t;
 	listeners_t											listeners;
 	listeners_t											recursive_listeners;
@@ -44,7 +49,7 @@ protected:
 	virtual tree_node			*generate		();
 
 public:
-	/*constructor*/		tree_node		(const tree_node *parent = NULL);
+	/*constructor*/		tree_node		(tree_node *parent = NULL);
 	virtual /*destructor*/~tree_node	();
 	
 	void						set_name		(std::string name);
@@ -62,7 +67,7 @@ public:
 	virtual tree_node			*at				(std::string path);
 	virtual const tree_node		*at				(std::string path) const;
 	
-	void				set_parent		(const tree_node *parent);
+	void				set_parent		(tree_node *parent);
 	
 	tree_node *					operator[]		(std::string path)
 	{
@@ -95,35 +100,29 @@ public:
 	{
 		return type;
 	}
+	
+	string_list_t get_names_of(const tree_node *) const;
 
+	virtual bool insert(std::string name, tree_node *obj, bool grant_ownership);
 
-
-	virtual typename children_t::size_type		insert			(std::string name, tree_node *obj, typename children_t::size_type after = std::numeric_limits<typename children_t::size_type>::max());
-	virtual typename children_t::size_type		insert			(std::string name, tree_node *obj, std::string after, bool generate = true);
-
-	virtual ls_list_t	ls				() const;
+	virtual string_list_t	ls				() const;
 
 	void				add_listener	(listener_t *, bool recursive = false);
 	void				remove_listener(listener_t *l, bool recursive = false);
 
-	std::string			get_name		() const;
+	std::string			get_name		(tree_node *parent = nullptr) const;
 	std::string			get_path		() const;
 
-	const tree_node	*get_parent		() const;
+	tree_node *get_parent() const;
 
-	virtual children_t	get_children	() const;
-
-	// refactor to (bool find(std::string name, size_type id);)
-	typename children_t::size_type	find		(std::string name) const;
-	tree_node *						find		(tree_node *) const;
-
+	virtual children_map_t get_children() const;
 
 	class listener_t
 	{
 	public:
 		/*constructor*/				listener_t					() {}
 		virtual /*destructor*/		~listener_t					() {}
-        virtual void				child_added								(tree_node */*parent*/, tree_node *) = 0;// {}
+        virtual void				child_added								(tree_node */*parent*/, const std::string &/*name*/, tree_node *) = 0;// {}
 		virtual void				child_removed							(tree_node */*parent*/, std::string/* name*/, tree_node */*removed_child*/) = 0; //{}
 		virtual void				on_remove								(tree_node *) {}
 	};

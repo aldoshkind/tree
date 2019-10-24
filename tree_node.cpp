@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-/*constructor*/ tree_node::tree_node(const tree_node *parent)
+/*constructor*/ tree_node::tree_node(tree_node *parent)
 {
 	set_parent(parent);
 	owned = false;
@@ -30,22 +30,23 @@ void tree_node::destruct()
 	{
 		//printf("jj\n");
 	}
-	printf("%s: %s has %d children\n", __func__, get_name().c_str(), children.size());
-	for(typename children_t::size_type i = 0 ; i < children.size() ; i += 1)
+	printf("%s: %s has %d children\n", __func__, get_name().c_str(), children_name_order.size());
+	for( ; children_map.size() ; )
 	{
-		tree_node *child = children[i];
+		const std::string &name = children_map.begin()->first;
+		tree_node *child = children_map.begin()->second;
 		if(child->owned == true && child->get_parent() == this)
 		{
 			child->set_parent(NULL);
-			printf("%s: delete own child %s\n", __func__, child->get_name().c_str());
+			printf("%s: delete own child %s\n", __func__, name.c_str());
 			delete child;
-			printf("%s: %s's children is of size %d now\n", __func__, get_name().c_str(), children.size());
+			printf("%s: %s's children is of size %d now\n", __func__, name.c_str(), children_name_order.size());
 		}
 		else
 		{
 			if(child->get_parent() == this)
 			{
-				printf("%s: detach child %s\n", __func__, get_name().c_str());
+				printf("%s: detach child %s\n", __func__, name.c_str());
 				child->set_parent(NULL);
 			}
 			else
@@ -56,7 +57,6 @@ void tree_node::destruct()
 			// should we report detached to child?
 		}
 		//printf("%s: e %s\n", __func__, get_name().c_str());
-		const std::string &name = child->get_name();
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
 			//printf("%s: f %s\n", __func__, get_name().c_str());
@@ -71,65 +71,50 @@ void tree_node::destruct()
 	}
 	for( ; parents.size() != 0 ; )
 	{
-		tree_node *p = *parents.begin();
-		printf("%s: detach from %s\n", __func__, p->get_name().c_str());
+		tree_node *p = parents.begin()->first;
+		printf("%s: detach from '%s'\n", __func__, p->get_name().c_str());
 		p->detach(this);
 	}
 	printf("%s: %s destructed\n", __func__, get_name().c_str());
 }
 
-/*tree_node *tree_node::generate(std::string path)
-{
-	return get(path, true);
-}*/
-
 tree_node *tree_node::generate()
 {
-#warning
 	return new tree_node(this);
 }
 
-typename tree_node::children_t::size_type tree_node::insert(std::string name, tree_node *obj, typename children_t::size_type after)
+bool tree_node::insert(std::string name, tree_node *obj, bool grant_ownership)
 {
-	if(after >= children.size())
+	if(children_map.find(name) != children_map.end())
 	{
-		children.push_back(obj);
+		return false;
 	}
-	else
+	
+	children_name_order.push_back(name);
+	children_map[name] = obj;
+	
+	// изменяем признак принаджелности объекта только если он нам принаджелит
+	if(grant_ownership == true)
 	{
-		children.insert(children.begin() + after, obj);
-	}
-	if(obj->get_parent() == nullptr)
-	{
+		obj->owned = true;
+		obj->set_name(name);
 		obj->set_parent(this);
 	}
-	
-	if(obj->get_parent() == this)
-	{
-		obj->set_name(name);
-	}
-	
-	if(obj->get_parent() != nullptr && obj->get_parent() != this)
+	else
 	{
 		obj->add_parent(this);
 	}
 
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
-		(*it)->child_added(this, obj);
+		(*it)->child_added(this, name, obj);
 	}
 
 	for(typename listeners_t::iterator it = recursive_listeners.begin() ; it != recursive_listeners.end() ; ++it)
 	{
 		obj->add_listener(*it, true);
 	}
-	return children.size() - 1;
-}
-
-typename tree_node::children_t::size_type tree_node::insert(std::string name, tree_node *obj, std::string after, bool grant_ownership)
-{
-	obj->owned = grant_ownership;
-	return insert(name, obj, find(after));
+	return true;
 }
 
 tree_node *tree_node::attach(std::string path, tree_node *obj, bool grant_ownership)
@@ -150,8 +135,7 @@ tree_node *tree_node::attach(std::string path, tree_node *obj, bool grant_owners
 	tree_node *item = par->get(name, false);
 	if(item == NULL)
 	{
-		obj->owned = grant_ownership;
-		par->insert(name, obj);
+		par->insert(name, obj, grant_ownership);
 		item = obj;
 	}
 
@@ -184,17 +168,20 @@ tree_node *tree_node::get(std::string path, bool create)
 	std::string name, rest_of_path;
 	extract_next_level_name(path, name, rest_of_path);
 
-	typename children_t::size_type child_id = find(name);
-	if(child_id >= children.size())
+	if(children_map.find(name) == children_map.end())
 	{
 		if(create == false)
 		{
-			return NULL;
+			return nullptr;
 		}
 
-		child_id = insert(name, generate());
+		bool ok = insert(name, generate(), true);
+		if(ok != true)
+		{
+			return nullptr;
+		}
 	}
-	return children[child_id]->get(rest_of_path, create);
+	return children_map[name]->get(rest_of_path, create);
 }
 
 const tree_node *tree_node::get(std::string path) const
@@ -213,12 +200,11 @@ const tree_node *tree_node::get(std::string path) const
 	std::string name, rest_of_path;
 	extract_next_level_name(path, name, rest_of_path);
 
-	typename children_t::size_type child_id = find(name);
-	if(child_id >= children.size())
+	if(children_map.find(name) == children_map.end())
 	{
-		return NULL;
+		return nullptr;
 	}
-	return children[child_id]->get(rest_of_path);
+	return children_map.at(name)->get(rest_of_path);
 }
 
 void tree_node::clear_listeners()
@@ -229,21 +215,19 @@ void tree_node::clear_listeners()
 
 tree_node *tree_node::detach(std::string name)
 {
-    typename children_t::size_type child_id = find(name);
-
     // если нет такого потомка, то ошибка
-    if(child_id >= children.size())
+    if(children_map.find(name) == children_map.end())
     {
         return nullptr;
     }
 
-    tree_node* child = children[child_id];
-    children.erase(children.begin() + child_id);
+    tree_node *child = children_map[name];
+    children_map.erase(name);
+	children_name_order.remove(name);
 	if(child->get_parent() == this)
 	{
 		child->set_parent(nullptr);
-#warning Почему?
-		child->clear_listeners();
+//		child->clear_listeners();
 	}
 	else
 	{
@@ -260,28 +244,33 @@ tree_node *tree_node::detach(std::string name)
 #warning Копипаста метода выше?
 tree_node *tree_node::detach(tree_node *child)
 {
-	auto found = std::find(children.begin(), children.end(), child);
+	//auto found = std::find(children.begin(), children.end(), child);
+	auto names = get_names_of(child);
 	
     // если нет такого потомка, то ошибка
-    if(found == children.end())
+    if(names.size() == 0)
     {
         return nullptr;
     }
 
-    children.erase(found, found + 1);
-	if(child->get_parent() == this)
+	for(auto &name : names)
 	{
-		child->set_parent(nullptr);
-		child->clear_listeners();
+		children_map.erase(name);
+		children_name_order.remove(name);
+		if(child->get_parent() == this)
+		{
+			child->set_parent(nullptr);
+//			child->clear_listeners();
+		}
+		else
+		{
+			child->remove_parent(this);
+		}
+		for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+		{
+			(*it)->child_removed(this, name, child);
+		}
 	}
-	else
-	{
-		child->remove_parent(this);
-	}
-    for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
-	{
-		(*it)->child_removed(this, child->get_name(), child);
-    }
 	
 	return child;
 }
@@ -297,15 +286,13 @@ int tree_node::remove(std::string path, bool recursive)
 	std::string name, rest_of_path;
 	extract_next_level_name(path, name, rest_of_path);
 
-	typename children_t::size_type child_id = find(name);
-
 	// если нет такого потомка, то ошибка
-	if(child_id >= children.size())
-	{
-		return -1;
-	}
+    if(children_map.find(name) == children_map.end())
+    {
+        return -1;
+    }
 
-	tree_node *child = children[child_id];
+	tree_node *child = children_map[name];
 
 	// если потомок есть, и остальной путь пуст - то удалять потомка
 	if(rest_of_path.size() == 0)
@@ -313,14 +300,18 @@ int tree_node::remove(std::string path, bool recursive)
 		// если удаление рекурсивное, или потомок пустой - то удаляем, иначе ошибка
 		if(recursive || (child->is_empty() == true))
 		{
-            if(child->owned == true && child->get_parent() == this)
+			// если хозяин должен удалить потомка и этот потомок наш и не является ссылкой (совпадает имя удаляемого с именем объекта) - удаляем
+            if(child->owned == true && child->get_parent() == this && child->get_name() == name)
 			{
+				// тут он сам удалится у остальных родителей
 				delete child;
 			}
-			else if(child->get_parent() != this)
+			// если не нужно удалять, либо потомок не наш, либо это ссылка - забываем его
+			else
 			{
 				child->remove_parent(this);
-				children.erase(children.begin() + child_id);
+				children_map.erase(name);
+				children_name_order.remove(name);
 				for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 				{
 					(*it)->child_removed(this, name, child);
@@ -335,19 +326,12 @@ int tree_node::remove(std::string path, bool recursive)
 
 bool tree_node::is_empty() const
 {
-	return (children.size() == 0);
+	return (children_map.size() == 0);
 }
 
-typename tree_node::ls_list_t tree_node::ls() const
+typename tree_node::string_list_t tree_node::ls() const
 {
-	ls_list_t list;
-
-	for(typename children_t::const_iterator it = children.begin() ; it != children.end() ; ++it)
-	{
-		list.push_back((*it)->get_name());
-	}
-
-	return list;
+	return children_name_order;
 }
 
 void tree_node::set_name(std::string n)
@@ -362,12 +346,13 @@ void tree_node::add_listener(listener_t *l, bool recursive)
 	{
 		recursive_listeners.insert(l);
 	}
-	for(typename children_t::iterator it = children.begin() ; it != children.end() ; ++it)
+
+	for(auto &ch : children_map)
 	{
-		l->child_added(this, *it);
+		l->child_added(this, ch.first, ch.second);
 		if(recursive == true)
 		{
-			(*it)->add_listener(l, recursive);
+			ch.second->add_listener(l, recursive);
 		}
 	}
 }
@@ -377,17 +362,22 @@ void tree_node::remove_listener(listener_t *l, bool recursive)
 	recursive_listeners.erase(l);
 	if (recursive)
 	{
-		for (tree_node* child : children)
+		for (auto child : children_map)
 		{
-			child->remove_listener(l, recursive);
+			child.second->remove_listener(l, recursive);
 		}
 	}
 }
 
 
-std::string tree_node::get_name() const
+std::string tree_node::get_name(tree_node *parent) const
 {
-	return name;
+	if(parents.find(parent) == parents.end())
+	{
+		return name;
+	}
+	auto names = parent->get_names_of(this);
+	return names.size() > 0 ? names.front() : "";
 }
 
 
@@ -401,7 +391,7 @@ std::string tree_node::get_path() const
 }
 
 
-void tree_node::set_parent(const tree_node *parent)
+void tree_node::set_parent(tree_node *parent)
 {
 	if(parent != nullptr)
 	{
@@ -415,46 +405,20 @@ void tree_node::set_parent(const tree_node *parent)
 }
 
 
-const tree_node *tree_node::get_parent() const
+tree_node *tree_node::get_parent() const
 {
 	return parent;
 }
 
 
-typename tree_node::children_t::size_type tree_node::find(std::string name) const
+typename tree_node::children_map_t tree_node::get_children() const
 {
-	for(typename children_t::size_type i = 0 ; i < children.size() ; i += 1)
-	{
-		if(children[i]->get_name() == name)
-		{
-			return i;
-		}
-	}
-	return std::numeric_limits<typename children_t::size_type>::max();
-}
-
-tree_node *tree_node::find(tree_node *child) const
-{
-	auto found = std::find(children.begin(), children.end(), child);
-	
-    // если нет такого потомка, то ошибка
-    if(found == children.end())
-    {
-        return nullptr;
-    }
-	
-	return *found;
-}
-
-
-typename tree_node::children_t tree_node::get_children() const
-{
-	return children;
+	return children_map;
 }
 
 void tree_node::add_parent(tree_node *parent)
 {
-	parents.insert(parent);
+	parents[parent] += 1;
 	if(parent == nullptr)
 	{
 		printf("%s: replace null parent\n", __func__);
@@ -464,5 +428,27 @@ void tree_node::add_parent(tree_node *parent)
 
 void tree_node::remove_parent(tree_node *parent)
 {
-	parents.erase(parent);
+	auto it = parents.find(parent);
+	if(it != parents.end())
+	{
+		it->second -= 1;
+		if(it->second == 0)
+		{
+			parents.erase(it);
+		}
+	}
+}
+
+tree_node::string_list_t tree_node::get_names_of(const tree_node *n) const
+{
+	string_list_t names;
+	for(auto i : children_map)
+	{
+		if(i.second == n)
+		{
+			names.push_back(i.first);
+		}
+	}
+	
+	return names;
 }
