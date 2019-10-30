@@ -37,7 +37,7 @@ void tree_node::destruct()
 		tree_node *child = children_map.begin()->second;
 		if(child->owned == true && child->get_parent() == this)
 		{
-			child->set_parent(NULL);
+			//child->set_parent(NULL);
 			printf("%s: delete own child %s\n", __func__, name.c_str());
 			delete child;
 			printf("%s: %s's children is of size %d now\n", __func__, name.c_str(), children_name_order.size());
