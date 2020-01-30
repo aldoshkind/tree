@@ -30,7 +30,7 @@ void tree_node::destruct()
 	{
 		//printf("jj\n");
 	}
-	printf("%s: %s has %d children\n", __func__, get_name().c_str(), children_name_order.size());
+	printf("%s: %s has %d children\n", __func__, get_name().c_str(), (int)children_name_order.size());
 	for( ; children_map.size() ; )
 	{
 		const std::string &name = children_map.begin()->first;
@@ -40,7 +40,7 @@ void tree_node::destruct()
 			//child->set_parent(NULL);
 			printf("%s: delete own child %s\n", __func__, name.c_str());
 			delete child;
-			printf("%s: %s's children is of size %d now\n", __func__, name.c_str(), children_name_order.size());
+			printf("%s: %s's children is of size %d now\n", __func__, name.c_str(), (int)children_name_order.size());
 		}
 		else
 		{
