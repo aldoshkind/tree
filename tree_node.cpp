@@ -4,8 +4,7 @@
 
 /*constructor*/ tree_node::tree_node(tree_node *parent)
 {
-	set_parent(parent);
-	owned = false;
+	set_owner(parent);
 	destructed = false;
 }
 
@@ -35,7 +34,7 @@ void tree_node::destruct()
 	{
 		const std::string &name = children_map.begin()->first;
 		tree_node *child = children_map.begin()->second;
-		if(child->owned == true && child->get_parent() == this)
+		if(child->get_owner() == this)
 		{
 			//child->set_parent(NULL);
 			printf("%s: delete own child %s\n", __func__, name.c_str());
@@ -44,14 +43,14 @@ void tree_node::destruct()
 		}
 		else
 		{
-			if(child->get_parent() == this)
+			if(child->get_owner() == this)
 			{
 				printf("%s: detach child %s\n", __func__, name.c_str());
-				child->set_parent(NULL);
+				child->set_owner(NULL);
 			}
 			else
 			{
-				printf("%s: remove parent from %s whose parent is\"%s\"\n", __func__, child->get_name().c_str(), child->get_parent()->get_name().c_str());
+				printf("%s: remove parent from %s whose parent is\"%s\"\n", __func__, child->get_name().c_str(), child->get_owner()->get_name().c_str());
 				child->remove_parent(this);
 			}
 			// should we report detached to child?
@@ -83,7 +82,7 @@ tree_node *tree_node::generate()
 	return new tree_node(this);
 }
 
-bool tree_node::insert(std::string name, tree_node *obj, bool grant_ownership)
+bool tree_node::insert(const std::string &name, tree_node *obj, bool grant_ownership)
 {
 	if(children_map.find(name) != children_map.end())
 	{
@@ -96,14 +95,13 @@ bool tree_node::insert(std::string name, tree_node *obj, bool grant_ownership)
 	// изменяем признак принаджелности объекта только если он нам принаджелит
 	if(grant_ownership == true)
 	{
-		obj->owned = true;
 		obj->set_name(name);
-		obj->set_parent(this);
+		obj->set_owner(this);
 	}
-	else if(obj->get_parent() == nullptr)
+	else if(obj->get_owner() == nullptr)
 	{
 		obj->set_name(name);
-		obj->set_parent(this);
+		obj->set_owner(this);
 	}
 	else
 	{
@@ -229,9 +227,9 @@ tree_node *tree_node::detach(std::string name)
     tree_node *child = children_map[name];
     children_map.erase(name);
 	children_name_order.remove(name);
-	if(child->get_parent() == this)
+	if(child->get_owner() == this)
 	{
-		child->set_parent(nullptr);
+		child->set_owner(nullptr);
 //		child->clear_listeners();
 	}
 	else
@@ -262,9 +260,9 @@ tree_node *tree_node::detach(tree_node *child)
 	{
 		children_map.erase(name);
 		children_name_order.remove(name);
-		if(child->get_parent() == this)
+		if(child->get_owner() == this)
 		{
-			child->set_parent(nullptr);
+			child->set_owner(nullptr);
 //			child->clear_listeners();
 		}
 		else
@@ -306,7 +304,7 @@ int tree_node::remove(std::string path, bool recursive)
 		if(recursive || (child->is_empty() == true))
 		{
 			// если хозяин должен удалить потомка и этот потомок наш и не является ссылкой (совпадает имя удаляемого с именем объекта) - удаляем
-            if(child->owned == true && child->get_parent() == this && child->get_name() == name)
+            if(child->get_owner() == this && child->get_name() == name)
 			{
 				// тут он сам удалится у остальных родителей
 				delete child;
@@ -388,31 +386,36 @@ std::string tree_node::get_name(tree_node *parent) const
 
 std::string tree_node::get_path() const
 {
-	if(parent != NULL)
+	if(owner != NULL)
 	{
-		return parent->get_path() + "/" + get_name();
+		return owner->get_path() + "/" + get_name();
 	}
 	return "";
 }
 
 
-void tree_node::set_parent(tree_node *parent)
+void tree_node::set_owner(tree_node *ow)
 {
-	if(parent != nullptr)
+	if(owner == ow)
 	{
-		add_parent(const_cast<tree_node *>(parent));
+		return;
+	}
+	
+	if(ow != nullptr)
+	{
+		add_parent(const_cast<tree_node *>(ow));
 	}
 	else
 	{
-		remove_parent(const_cast<tree_node *>(this->parent));
+		remove_parent(const_cast<tree_node *>(this->owner));
 	}
-	this->parent = parent;
+	this->owner = ow;
 }
 
 
-tree_node *tree_node::get_parent() const
+tree_node *tree_node::get_owner() const
 {
-	return parent;
+	return owner;
 }
 
 
@@ -427,7 +430,7 @@ void tree_node::add_parent(tree_node *parent)
 	if(parent == nullptr)
 	{
 		printf("%s: replace null parent\n", __func__);
-		this->parent = parent;
+		this->owner = parent;
 	}
 }
 
@@ -461,4 +464,24 @@ tree_node::string_list_t tree_node::get_names_of(const tree_node *n) const
 tree_node::children_name_order_t tree_node::get_children_order() const
 {
 	return children_name_order;
+}
+
+tree_node *tree_node::operator [](std::string path)
+{
+	return at(path);
+}
+
+const tree_node *tree_node::operator [](std::string path) const
+{
+	return at(path);
+}
+
+void tree_node::set_type(const std::string &type)
+{
+	this->type = type;
+}
+
+std::string tree_node::get_type() const
+{
+	return type;
 }
