@@ -24,15 +24,10 @@ void tree_node::destruct()
 	}
 	destructed = true;
 
-	//printf("%s: b %s\n", __func__, get_name().c_str());
-	if(get_name() == "jetson")
-	{
-		//printf("jj\n");
-	}
 	printf("%s: %s has %d children\n", __func__, get_name().c_str(), (int)children_name_order.size());
 	for( ; children_map.size() ; )
 	{
-		const std::string &name = children_map.begin()->first;
+		const std::string name = children_map.begin()->first;
 		tree_node *child = children_map.begin()->second;
 		if(child->get_owner() == this)
 		{
@@ -101,7 +96,7 @@ bool tree_node::insert(const std::string &name, tree_node *obj, bool grant_owner
 	else if(obj->get_owner() == nullptr)
 	{
 		obj->set_name(name);
-		obj->set_owner(this);
+		obj->add_parent(this);
 	}
 	else
 	{
@@ -416,6 +411,17 @@ void tree_node::set_owner(tree_node *ow)
 tree_node *tree_node::get_owner() const
 {
 	return owner;
+}
+
+tree_node::parent_set_t tree_node::get_parents() const
+{
+	parent_set_t res;
+	for(auto p : parents)
+	{
+		res.insert(p.first);
+	}
+	
+	return res;
 }
 
 

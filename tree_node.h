@@ -20,6 +20,9 @@ public:
 	
 	typedef string_list_t children_name_order_t;
 	typedef std::map<std::string, tree_node *> children_map_t;
+	
+	typedef std::set<tree_node *> parent_set_t;
+	parent_set_t parent_set;
 
 public:
 	/*constructor*/ tree_node(tree_node *owner = NULL);
@@ -27,6 +30,8 @@ public:
 	
 	void set_name(std::string name);
 
+	parent_set_t get_parents() const;
+	
 	virtual tree_node *get(std::string path, bool create);
 	virtual const tree_node *get(std::string path) const;
 
