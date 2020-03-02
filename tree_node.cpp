@@ -29,7 +29,7 @@ void tree_node::destruct()
 	{
 		const std::string name = children_map.begin()->first;
 		tree_node *child = children_map.begin()->second;
-		if(child->get_owner() == this)
+		if(child->get_owner() == this && owned)
 		{
 			//child->set_parent(NULL);
 			printf("%s: delete own child %s\n", __func__, name.c_str());
@@ -92,10 +92,12 @@ bool tree_node::insert(const std::string &name, tree_node *obj, bool grant_owner
 	{
 		obj->set_name(name);
 		obj->set_owner(this);
+		obj->owned = true;
 	}
 	else if(obj->get_owner() == nullptr)
 	{
 		obj->set_name(name);
+		obj->set_owner(this);
 		obj->add_parent(this);
 	}
 	else
@@ -299,7 +301,7 @@ int tree_node::remove(std::string path, bool recursive)
 		if(recursive || (child->is_empty() == true))
 		{
 			// если хозяин должен удалить потомка и этот потомок наш и не является ссылкой (совпадает имя удаляемого с именем объекта) - удаляем
-            if(child->get_owner() == this && child->get_name() == name)
+            if(child->owned == true && child->get_owner() == this && child->get_name() == name)
 			{
 				// тут он сам удалится у остальных родителей
 				delete child;

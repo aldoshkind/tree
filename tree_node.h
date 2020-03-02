@@ -91,6 +91,7 @@ public:
 	typedef std::map<tree_node *, size_t> parents_t;
 	parents_t parents;
 	std::string name;
+	bool owned = false;
 
 	children_name_order_t children_name_order;
 	children_map_t children_map;
