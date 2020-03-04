@@ -41,28 +41,38 @@ void tree_node::destruct()
 			if(child->get_owner() == this)
 			{
 				printf("%s: detach child %s\n", __func__, name.c_str());
-				child->set_owner(NULL);
+				child->set_owner(nullptr);
+				children_map.erase(child->get_name());
+				children_name_order.remove(child->get_name());
 			}
 			else
 			{
-				printf("%s: remove parent from %s whose parent is\"%s\"\n", __func__, child->get_name().c_str(), child->get_owner()->get_name().c_str());
+				auto parent_name = child->get_owner() ? child->get_owner()->get_name() : "null";
+				printf("%s: remove parent from %s whose parent is \"%s\"\n", __func__, child->get_name().c_str(), parent_name.c_str());
 				child->remove_parent(this);
+				children_map.erase(child->get_name());
+				children_name_order.remove(child->get_name());
 			}
 			// should we report detached to child?
 		}
 		//printf("%s: e %s\n", __func__, get_name().c_str());
+		std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
 			//printf("%s: f %s\n", __func__, get_name().c_str());
 			(*it)->child_removed(this, name, child);
 		}
 	}
+	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
 	printf("%s: processing children of %s done\n", __func__, get_name().c_str());
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
 		//printf("%s: h %s\n", __func__, get_name().c_str());
-		(*it)->on_remove(this);
+		tree_node_listener *l = *it;
+		l->on_remove(this);
+		l->remove_observable(this);
 	}
+	lock.unlock();
 	for( ; parents.size() != 0 ; )
 	{
 		tree_node *p = parents.begin()->first;
@@ -98,13 +108,13 @@ bool tree_node::insert(const std::string &name, tree_node *obj, bool grant_owner
 	{
 		obj->set_name(name);
 		obj->set_owner(this);
-		obj->add_parent(this);
 	}
 	else
 	{
 		obj->add_parent(this);
 	}
 
+	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
 		(*it)->child_added(this, name, obj);
@@ -209,6 +219,7 @@ const tree_node *tree_node::get(std::string path) const
 
 void tree_node::clear_listeners()
 {
+	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
     listeners.clear();
     recursive_listeners.clear();
 }
@@ -233,6 +244,7 @@ tree_node *tree_node::detach(std::string name)
 	{
 		child->remove_parent(this);
 	}
+	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
     for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
     {
 		(*it)->child_removed(this, child->get_name(), child);
@@ -266,6 +278,7 @@ tree_node *tree_node::detach(tree_node *child)
 		{
 			child->remove_parent(this);
 		}
+		std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
 		for (typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 		{
 			(*it)->child_removed(this, name, child);
@@ -312,6 +325,7 @@ int tree_node::remove(std::string path, bool recursive)
 				child->remove_parent(this);
 				children_map.erase(name);
 				children_name_order.remove(name);
+				std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
 				for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 				{
 					(*it)->child_removed(this, name, child);
@@ -339,13 +353,15 @@ void tree_node::set_name(std::string n)
 	name = n;
 }
 
-void tree_node::add_listener(listener_t *l, bool recursive)
+void tree_node::add_listener(tree_node_listener *l, bool recursive)
 {
+	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
 	listeners.insert(l);
 	if(recursive == true)
 	{
 		recursive_listeners.insert(l);
 	}
+	l->add_observable(this);
 
 	for(auto &ch : children_map)
 	{
@@ -356,10 +372,12 @@ void tree_node::add_listener(listener_t *l, bool recursive)
 		}
 	}
 }
-void tree_node::remove_listener(listener_t *l, bool recursive)
+void tree_node::remove_listener(tree_node_listener *l, bool recursive)
 {
+	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
 	listeners.erase(l);
 	recursive_listeners.erase(l);
+	l->remove_observable(this);
 	if (recursive)
 	{
 		for (auto child : children_map)
@@ -492,4 +510,26 @@ void tree_node::set_type(const std::string &type)
 std::string tree_node::get_type() const
 {
 	return type;
+}
+
+
+/*destructor*/ tree_node_listener::~tree_node_listener()
+{
+	std::unique_lock<decltype(observables_mutex)> lock(observables_mutex);
+	for(auto &o : observables)
+	{
+		o->remove_listener(this);
+	}
+}
+
+void tree_node_listener::add_observable(tree_node *o)
+{
+	std::unique_lock<decltype(observables_mutex)> lock(observables_mutex);
+	observables.insert(o);
+}
+
+void tree_node_listener::remove_observable(tree_node *o)
+{
+	std::unique_lock<decltype(observables_mutex)> lock(observables_mutex);
+	observables.erase(o);
 }

@@ -8,14 +8,34 @@
 #include <string>
 #include <limits>
 #include <vector>
+#include <mutex>
 
 #include "filepath_utils.h"
+
+class tree_node;
+
+class tree_node_listener
+{
+public:
+	/*constructor*/ tree_node_listener() {}
+	virtual /*destructor*/ ~tree_node_listener();
+	virtual void child_added(tree_node */*parent*/, const std::string &/*name*/, tree_node *) = 0;
+	virtual void child_removed(tree_node */*parent*/, std::string/* name*/, tree_node */*removed_child*/) = 0;
+	virtual void on_remove(tree_node *) {}
+	
+	void add_observable(tree_node *o);
+	void remove_observable(tree_node *o);
+	
+private:
+	std::recursive_mutex observables_mutex;
+	
+	typedef std::set<tree_node *> observables_t;
+	observables_t observables;
+};
 
 class tree_node
 {
 public:
-	class listener_t;
-	
 	typedef std::list<std::string> string_list_t;
 	
 	typedef string_list_t children_name_order_t;
@@ -65,8 +85,8 @@ public:
 
 	virtual string_list_t ls() const;
 
-	void add_listener(listener_t *, bool recursive = false);
-	void remove_listener(listener_t *l, bool recursive = false);
+	void add_listener(tree_node_listener *, bool recursive = false);
+	void remove_listener(tree_node_listener *l, bool recursive = false);
 
 	std::string get_name(tree_node *owner = nullptr) const;
 	std::string get_path() const;
@@ -75,16 +95,6 @@ public:
 
 	virtual children_map_t get_children() const;
 	virtual children_name_order_t get_children_order() const;
-
-	class listener_t
-	{
-	public:
-		/*constructor*/ listener_t() {}
-		virtual /*destructor*/ ~listener_t() {}
-        virtual void child_added(tree_node */*parent*/, const std::string &/*name*/, tree_node *) = 0;
-		virtual void child_removed(tree_node */*parent*/, std::string/* name*/, tree_node */*removed_child*/) = 0;
-		virtual void on_remove(tree_node *) {}
-	};
 
 //private:
 	tree_node *owner = nullptr;
@@ -96,7 +106,8 @@ public:
 	children_name_order_t children_name_order;
 	children_map_t children_map;
 	
-	typedef std::set<listener_t *> listeners_t;
+	std::recursive_mutex listeners_mutex;
+	typedef std::set<tree_node_listener *> listeners_t;
 	listeners_t listeners;
 	listeners_t recursive_listeners;
 	
