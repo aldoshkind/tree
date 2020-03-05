@@ -418,7 +418,7 @@ void tree_node::set_owner(tree_node *ow)
 	
 	if(ow != nullptr)
 	{
-		add_parent(const_cast<tree_node *>(ow));
+		add_parent(ow);
 	}
 	else
 	{
