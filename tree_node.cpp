@@ -114,6 +114,8 @@ bool tree_node::insert(const std::string &name, tree_node *obj, bool grant_owner
 		obj->add_parent(this);
 	}
 
+	notify_parents_child_added(this, obj, name);
+	
 	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
@@ -532,4 +534,31 @@ void tree_node_listener::remove_observable(tree_node *o)
 {
 	std::unique_lock<decltype(observables_mutex)> lock(observables_mutex);
 	observables.erase(o);
+}
+
+void tree_node::notify_parents_child_added(tree_node *parent, tree_node *obj, const std::string &object_path)
+{
+	if(owner != nullptr)
+	{
+		owner->subtree_child_added(parent, obj, name + "/" + object_path);
+	}
+	for(auto pit : parents)
+	{
+		auto &p = pit.first;
+		auto names = p->get_names_of(this);
+		for(auto &name : names)
+		{
+			p->subtree_child_added(parent, obj, name + "/" + object_path);
+		}
+	}
+}
+
+void tree_node::subtree_child_added(tree_node *parent, tree_node *child, const std::string &path)
+{
+	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
+	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+	{
+		(*it)->subtree_child_added(this, parent, child, path);
+	}
+	notify_parents_child_added(parent, child, path);
 }
