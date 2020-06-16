@@ -327,3 +327,52 @@ public:
 	
 	using base_t::operator =;
 };
+
+
+template <class T>
+class property_clamped : public T
+{
+public:
+	typedef typename T::value_type value_type;
+
+	template <class ... types>
+	property_clamped(types ... args) : T(args ...)
+	{
+		//
+	}
+
+	using T::operator =;
+
+	void set_value(const value_type &value) override
+	{
+		value_type tmp = value;
+		if(min_set)
+		{
+			tmp = std::max(tmp, min);
+		}
+		if(max_set)
+		{
+			tmp = std::min(tmp, max);
+		}
+		T::set_value(tmp);
+	}
+
+	void set_min(const value_type &m)
+	{
+		min_set = true;
+		min = m;
+	}
+
+	void set_max(const value_type &m)
+	{
+		max_set = true;
+		max = m;
+	}
+
+private:
+	bool min_set = false;
+	bool max_set = false;
+
+	value_type min;
+	value_type max;
+};
