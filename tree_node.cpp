@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+bool do_print_debug = false;
+
 /*constructor*/ tree_node::tree_node(tree_node *parent)
 {
 	set_owner(parent);
@@ -11,20 +13,20 @@
 
 /*destructor*/ tree_node::~tree_node()
 {
-	printf("%s: %s\n", __func__, get_name().c_str());
+	//printf("%s: %s\n", __func__, get_name().c_str());
 	destruct();
 }
 
 void tree_node::destruct()
 {
-	printf("%s: a %s\n", __func__, get_name().c_str());
+	//printf("%s: a %s\n", __func__, get_name().c_str());
 	if(destructed == true)
 	{
 		return;
 	}
 	destructed = true;
 
-	printf("%s: %s has %d children\n", __func__, get_name().c_str(), (int)children_name_order.size());
+	//printf("%s: %s has %d children\n", __func__, get_name().c_str(), (int)children_name_order.size());
 	for( ; children_map.size() ; )
 	{
 		const std::string name = children_map.begin()->first;
@@ -32,15 +34,15 @@ void tree_node::destruct()
 		if(child->get_owner() == this && owned)
 		{
 			//child->set_parent(NULL);
-			printf("%s: delete own child %s\n", __func__, name.c_str());
+			//printf("%s: delete own child %s\n", __func__, name.c_str());
 			delete child;
-			printf("%s: %s's children is of size %d now\n", __func__, name.c_str(), (int)children_name_order.size());
+			//printf("%s: %s's children is of size %d now\n", __func__, name.c_str(), (int)children_name_order.size());
 		}
 		else
 		{
 			if(child->get_owner() == this)
 			{
-				printf("%s: detach child %s\n", __func__, name.c_str());
+				//printf("%s: detach child %s\n", __func__, name.c_str());
 				child->set_owner(nullptr);
 				children_map.erase(child->get_name());
 				children_name_order.remove(child->get_name());
@@ -48,7 +50,7 @@ void tree_node::destruct()
 			else
 			{
 				auto parent_name = child->get_owner() ? child->get_owner()->get_name() : "null";
-				printf("%s: remove parent from %s whose parent is \"%s\"\n", __func__, child->get_name().c_str(), parent_name.c_str());
+				//printf("%s: remove parent from %s whose parent is \"%s\"\n", __func__, child->get_name().c_str(), parent_name.c_str());
 				child->remove_parent(this);
 				children_map.erase(child->get_name());
 				children_name_order.remove(child->get_name());
@@ -64,7 +66,7 @@ void tree_node::destruct()
 		}
 	}
 	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
-	printf("%s: processing children of %s done\n", __func__, get_name().c_str());
+	//printf("%s: processing children of %s done\n", __func__, get_name().c_str());
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
 		//printf("%s: h %s\n", __func__, get_name().c_str());
@@ -76,10 +78,10 @@ void tree_node::destruct()
 	for( ; parents.size() != 0 ; )
 	{
 		tree_node *p = parents.begin()->first;
-		printf("%s: detach from '%s'\n", __func__, p->get_name().c_str());
+		//printf("%s: detach from '%s'\n", __func__, p->get_name().c_str());
 		p->detach(this);
 	}
-	printf("%s: %s destructed\n", __func__, get_name().c_str());
+	//printf("%s: %s destructed\n", __func__, get_name().c_str());
 }
 
 tree_node *tree_node::generate()
@@ -96,7 +98,7 @@ bool tree_node::insert(const std::string &name, tree_node *obj, bool grant_owner
 	
 	children_name_order.push_back(name);
 	children_map[name] = obj;
-	
+
 	// изменяем признак принаджелности объекта только если он нам принаджелит
 	if(grant_ownership == true)
 	{
@@ -115,7 +117,7 @@ bool tree_node::insert(const std::string &name, tree_node *obj, bool grant_owner
 	}
 
 	notify_parents_child_added(this, obj, name);
-	
+
 	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
 	{
@@ -126,10 +128,11 @@ bool tree_node::insert(const std::string &name, tree_node *obj, bool grant_owner
 	{
 		obj->add_listener(*it, true);
 	}
+
 	return true;
 }
 
-tree_node *tree_node::attach(std::string path, tree_node *obj, bool grant_ownership)
+tree_node *tree_node::attach(const std::string &path, tree_node *obj, bool grant_ownership)
 {
 	if(obj == NULL)
 	{
@@ -139,6 +142,7 @@ tree_node *tree_node::attach(std::string path, tree_node *obj, bool grant_owners
 	std::string branch, name;
 	extract_last_level_name(path, branch, name);
 	tree_node *par = get(branch, true);
+
 	if(par == NULL)
 	{
 		return NULL;
@@ -457,7 +461,7 @@ void tree_node::add_parent(tree_node *parent)
 	parents[parent] += 1;
 	if(parent == nullptr)
 	{
-		printf("%s: replace null parent\n", __func__);
+		//printf("%s: replace null parent\n", __func__);
 		this->owner = parent;
 	}
 }
@@ -515,41 +519,39 @@ std::string tree_node::get_type() const
 }
 
 
-/*destructor*/ tree_node_listener::~tree_node_listener()
-{
-	std::unique_lock<decltype(observables_mutex)> lock(observables_mutex);
-	for(auto &o : observables)
-	{
-		o->remove_listener(this);
-	}
-}
 
-void tree_node_listener::add_observable(tree_node *o)
-{
-	std::unique_lock<decltype(observables_mutex)> lock(observables_mutex);
-	observables.insert(o);
-}
-
-void tree_node_listener::remove_observable(tree_node *o)
-{
-	std::unique_lock<decltype(observables_mutex)> lock(observables_mutex);
-	observables.erase(o);
-}
 
 void tree_node::notify_parents_child_added(tree_node *parent, tree_node *obj, const std::string &object_path)
 {
+	std::chrono::_V2::system_clock::time_point bt;
+	if(do_print_debug)
+	{
+		bt = std::chrono::system_clock::now();
+	}
+
 	if(owner != nullptr)
 	{
-		owner->subtree_child_added(parent, obj, name + "/" + object_path);
+		owner->subtree_child_added(parent, obj, object_path/*name + "/" + object_path*/);
 	}
 	for(auto pit : parents)
 	{
 		auto &p = pit.first;
-		auto names = p->get_names_of(this);
-		for(auto &name : names)
+		if(owner == p)
 		{
-			p->subtree_child_added(parent, obj, name + "/" + object_path);
+			continue;
 		}
+		//auto names = p->get_names_of(this);
+		//for(auto &name : names)
+		{
+			p->subtree_child_added(parent, obj, object_path/*name + "/" + object_path*/);
+		}
+	}
+
+	if(do_print_debug)
+	{
+		auto et = std::chrono::system_clock::now();
+		auto diff = std::chrono::duration<double>(et - bt).count();
+		printf("%s %s %f\n", __PRETTY_FUNCTION__, name.c_str(), diff);
 	}
 }
 
@@ -561,4 +563,5 @@ void tree_node::subtree_child_added(tree_node *parent, tree_node *child, const s
 		(*it)->subtree_child_added(this, parent, child, path);
 	}
 	notify_parents_child_added(parent, child, path);
+	printf("%s: %s\n", __PRETTY_FUNCTION__, (name + "/" + path).c_str());
 }

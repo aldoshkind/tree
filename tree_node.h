@@ -12,31 +12,7 @@
 
 #include "filepath_utils.h"
 
-class tree_node;
-
-class tree_node_listener
-{
-public:
-	/*constructor*/ tree_node_listener() {}
-	virtual /*destructor*/ ~tree_node_listener();
-	virtual void child_added(tree_node *parent, const std::string &name, tree_node *) = 0;
-	virtual void child_removed(tree_node *parent, std::string name, tree_node *removed_child) = 0;
-	virtual void on_remove(tree_node *) {}
-	virtual void subtree_child_added(tree_node */*reporter*/
-									 , tree_node */*parent*/
-									 , tree_node */*newly_added_child*/
-									 , const std::string &/*relative_path*/
-									 ){};
-	
-	void add_observable(tree_node *o);
-	void remove_observable(tree_node *o);
-	
-private:
-	std::recursive_mutex observables_mutex;
-	
-	typedef std::set<tree_node *> observables_t;
-	observables_t observables;
-};
+#include "tree_node_listener.h"
 
 
 
@@ -45,8 +21,7 @@ private:
 
 
 
-
-
+using tree_node_listener = tree::tree_node_listener;
 
 class tree_node
 {
@@ -74,7 +49,7 @@ public:
 
     virtual tree_node *detach(std::string path);
 	virtual tree_node *detach(tree_node *);
-    virtual tree_node *attach(std::string path, tree_node *obj, bool grant_ownership = true);
+    virtual tree_node *attach(const std::string &path, tree_node *obj, bool grant_ownership = true);
     virtual int remove(std::string path, bool recursive = false);
 
 	virtual tree_node *at(std::string path);
@@ -144,6 +119,13 @@ protected:
 private:
 	void notify_parents_child_added(tree_node *parent, tree_node *child, const std::string &path);
 };
+
+
+
+
+
+
+
 
 template<class type_as>
 const type_as *tree_node::at_as(const std::string &path) const
