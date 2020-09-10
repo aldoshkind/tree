@@ -26,7 +26,7 @@ public:
 
 
 
-class tree_node_listener
+class tree_node_listener : public tree_subtree_listener
 {
 public:
 	/*constructor*/ tree_node_listener() {}

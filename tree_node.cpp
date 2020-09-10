@@ -116,7 +116,10 @@ bool tree_node::insert(const std::string &name, tree_node *obj, bool grant_owner
 		obj->add_parent(this);
 	}
 
-	notify_parents_child_added(this, obj, name);
+	if(do_notify_subtree_changes)
+	{
+		notify_parents_child_added(this, obj, name);
+	}
 
 	std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
 	for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
@@ -523,6 +526,11 @@ std::string tree_node::get_type() const
 
 void tree_node::notify_parents_child_added(tree_node *parent, tree_node *obj, const std::string &object_path)
 {
+	if(do_notify_subtree_changes == false)
+	{
+		return;
+	}
+
 	std::chrono::_V2::system_clock::time_point bt;
 	if(do_print_debug)
 	{
@@ -531,7 +539,7 @@ void tree_node::notify_parents_child_added(tree_node *parent, tree_node *obj, co
 
 	if(owner != nullptr)
 	{
-		owner->subtree_child_added(parent, obj, object_path/*name + "/" + object_path*/);
+		owner->subtree_child_added(parent, obj, name + "/" + object_path);
 	}
 	for(auto pit : parents)
 	{
@@ -543,7 +551,7 @@ void tree_node::notify_parents_child_added(tree_node *parent, tree_node *obj, co
 		//auto names = p->get_names_of(this);
 		//for(auto &name : names)
 		{
-			p->subtree_child_added(parent, obj, object_path/*name + "/" + object_path*/);
+			p->subtree_child_added(parent, obj, name + "/" + object_path);
 		}
 	}
 
@@ -564,4 +572,9 @@ void tree_node::subtree_child_added(tree_node *parent, tree_node *child, const s
 	}
 	notify_parents_child_added(parent, child, path);
 	printf("%s: %s\n", __PRETTY_FUNCTION__, (name + "/" + path).c_str());
+}
+
+void tree_node::set_notify_subtree_enabled(bool enabled)
+{
+	do_notify_subtree_changes = enabled;
 }

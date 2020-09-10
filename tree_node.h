@@ -108,6 +108,8 @@ public:
 	std::string type;
 
 	void subtree_child_added(tree_node *parent, tree_node *child, const std::string &path);
+
+	virtual void set_notify_subtree_enabled(bool enabled);
 	
 protected:
 	void destruct();
@@ -118,6 +120,8 @@ protected:
 	
 private:
 	void notify_parents_child_added(tree_node *parent, tree_node *child, const std::string &path);
+
+	bool do_notify_subtree_changes = true;
 };
 
 
