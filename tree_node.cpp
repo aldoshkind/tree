@@ -503,6 +503,7 @@ tree_node::children_name_order_t tree_node::get_children_order() const
 
 tree_node *tree_node::operator [](std::string path)
 {
+#warning get(path, true);
 	return at(path);
 }
 
@@ -559,7 +560,7 @@ void tree_node::notify_parents_child_added(tree_node *parent, tree_node *obj, co
 	{
 		auto et = std::chrono::system_clock::now();
 		auto diff = std::chrono::duration<double>(et - bt).count();
-		printf("%s %s %f\n", __PRETTY_FUNCTION__, name.c_str(), diff);
+		//printf("%s %s %f\n", __PRETTY_FUNCTION__, name.c_str(), diff);
 	}
 }
 
@@ -571,7 +572,7 @@ void tree_node::subtree_child_added(tree_node *parent, tree_node *child, const s
 		(*it)->subtree_child_added(this, parent, child, path);
 	}
 	notify_parents_child_added(parent, child, path);
-	printf("%s: %s\n", __PRETTY_FUNCTION__, (name + "/" + path).c_str());
+	//printf("%s: %s\n", __PRETTY_FUNCTION__, (name + "/" + path).c_str());
 }
 
 void tree_node::set_notify_subtree_enabled(bool enabled)
