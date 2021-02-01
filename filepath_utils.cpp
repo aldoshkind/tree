@@ -3,6 +3,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+namespace tree::filepath_utils
+{
+
 int extract_next_level_name(std::string path, std::string &name, std::string &new_path)
 {
 	size_t name_end_pos = path.find_first_of('/');
@@ -106,4 +109,6 @@ int clean_path(std::string &path)
 	int res = clean_path((char *)path.c_str());
 	path.resize(strlen(path.c_str()));
 	return res;
+}
+
 }

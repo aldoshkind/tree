@@ -143,7 +143,7 @@ tree_node *tree_node::attach(const std::string &path, tree_node *obj, bool grant
 	}
 
 	std::string branch, name;
-	extract_last_level_name(path, branch, name);
+	tree::filepath_utils::extract_last_level_name(path, branch, name);
 	tree_node *par = get(branch, true);
 
 	if(par == NULL)
@@ -185,7 +185,7 @@ tree_node *tree_node::get(std::string path, bool create)
 	}
 
 	std::string name, rest_of_path;
-	extract_next_level_name(path, name, rest_of_path);
+	tree::filepath_utils::extract_next_level_name(path, name, rest_of_path);
 
 	if(children_map.find(name) == children_map.end())
 	{
@@ -217,7 +217,7 @@ const tree_node *tree_node::get(std::string path) const
 	}
 
 	std::string name, rest_of_path;
-	extract_next_level_name(path, name, rest_of_path);
+	tree::filepath_utils::extract_next_level_name(path, name, rest_of_path);
 
 	if(children_map.find(name) == children_map.end())
 	{
@@ -306,7 +306,7 @@ int tree_node::remove(std::string path, bool recursive)
 	}
 
 	std::string name, rest_of_path;
-	extract_next_level_name(path, name, rest_of_path);
+	tree::filepath_utils::extract_next_level_name(path, name, rest_of_path);
 
 	// если нет такого потомка, то ошибка
     if(children_map.find(name) == children_map.end())
