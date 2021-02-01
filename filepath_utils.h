@@ -2,8 +2,6 @@
 
 #include <string>
 
-#warning namespace tree::filepath_utils
-
 namespace tree::filepath_utils
 {
 
