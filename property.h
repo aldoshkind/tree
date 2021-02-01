@@ -93,7 +93,7 @@ protected:
 };
 
 template <class value_t>
-class property : public property_base
+class property : virtual public property_base
 {
 public:
 	typedef value_t value_type;
@@ -156,7 +156,7 @@ public:
 };
 
 template <class owner_t, class value_t>
-class property_get_set : public property<value_t>
+class property_get_set : virtual public property<value_t>
 {
 public:
 	typedef void (owner_t::*set_t)(const value_t &_t);
@@ -207,7 +207,7 @@ private:
 
 
 template <class owner_t, class value_t>
-class property_value_ptr : public property<value_t>
+class property_value_ptr : virtual public property<value_t>
 {
 	typedef value_t owner_t::* value_ptr;
 
@@ -245,7 +245,7 @@ public:
 
 
 template <class value_t>
-class property_value : public property<value_t>
+class property_value : virtual public property<value_t>
 {
 	value_t					value;
 
