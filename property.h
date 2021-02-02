@@ -9,24 +9,14 @@
 template <class value_t>
 class property;
 
-class property_base
+namespace tree
 {
-	typedef std::set<property_listener *>	listeners_t;
-	listeners_t								listeners;
-	std::recursive_mutex					listeners_mutex;
-	
-	bool						is_notification_in_process = false;
-	std::mutex					notification_mutex;
 
-	std::string					type;
-
+class observable
+{
 public:
-	/*constructor*/			property_base				()
-	{
-		//
-	}
-
-	virtual /*destructor*/	~property_base				()
+	observable(){}
+	virtual ~observable()
 	{
 		std::lock_guard<std::recursive_mutex> lock(listeners_mutex);
 		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
@@ -35,24 +25,19 @@ public:
 		}
 	}
 
-	virtual void			add_listener				(property_listener *l)
+	virtual void			add_listener				(observable_listener *l)
 	{
 		std::lock_guard<std::recursive_mutex> lock(listeners_mutex);
 		listeners.insert(l);
-		l->add_property(this);
+		l->add_observable(this);
 		l->updated(this);
 	}
 
-	virtual void			remove_listener				(property_listener *l)
+	virtual void			remove_listener				(observable_listener *l)
 	{
 		std::lock_guard<std::recursive_mutex> lock(listeners_mutex);
 		listeners.erase(l);
-		l->remove_property(this);
-	}
-
-	std::string				get_type					() const
-	{
-		return type;
+		l->remove_observable(this);
 	}
 
 	void					notify_change				()
@@ -63,16 +48,55 @@ public:
 			return;
 		}
 		is_notification_in_process = true;
-		
+
 		std::lock_guard<std::recursive_mutex> lock(listeners_mutex);
-		
+
 		notification_lock.unlock();
-		
+
 		for(const auto listener : listeners)
 		{
 			listener->updated(this);
 		}
 		is_notification_in_process = false;
+	}
+
+private:
+	typedef std::set<observable_listener *>	listeners_t;
+
+protected:
+	const listeners_t		&get_listeners				() const
+	{
+		return listeners;
+	}
+
+private:
+	listeners_t								listeners;
+	std::recursive_mutex					listeners_mutex;
+
+	bool						is_notification_in_process = false;
+	std::mutex					notification_mutex;
+};
+
+}
+
+class property_base : public tree::observable
+{
+	std::string					type;
+
+public:
+	/*constructor*/			property_base				()
+	{
+		//
+	}
+
+	virtual /*destructor*/	~property_base				()
+	{
+
+	}
+
+	std::string				get_type					() const
+	{
+		return type;
 	}
 
 	virtual void			set_value					(property_base */*prop*/)
@@ -84,11 +108,6 @@ protected:
 	void					set_type					(std::string type)
 	{
 		this->type = type;
-	}
-
-	const listeners_t		&get_listeners				() const
-	{
-		return listeners;
 	}
 };
 

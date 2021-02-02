@@ -2,18 +2,23 @@
 
 #include "property.h"
 
-/*constructor*/ property_listener::property_listener()
+namespace tree
+{
+
+/*constructor*/ observable_listener::observable_listener()
 {
 	//
 }
 
-/*destructor*/ property_listener::~property_listener()
+/*destructor*/ observable_listener::~observable_listener()
 {
 	mutex.lock();
-	for(properties_t::iterator it = properties.begin() ; it != properties.end() ; ++it)
+	for(observables_t::iterator it = observables.begin() ; it != observables.end() ; )
 	{
-		property_base *prop = *it;
-		properties.erase(it);
+		auto *prop = *it;
+		auto next = std::next(it);
+		observables.erase(it);
+		it = next;
 		mutex.unlock();
 		prop->remove_listener(this);
 		mutex.lock();
@@ -21,18 +26,40 @@
 	mutex.unlock();
 }
 
-void property_listener::add_property(property_base *p)
+void observable_listener::add_observable(observable *p)
 {
 	std::lock_guard<decltype(mutex)> lock(mutex);
-	properties.insert(p);
+	observables.insert(p);
+}
+
+void observable_listener::remove_observable(observable *p)
+{
+	std::lock_guard<decltype(mutex)> lock(mutex);
+	if(p == NULL || observables.find(p) == observables.end())
+	{
+		return;
+	}
+	observables.erase(p);
+}
+
+}
+
+void property_listener::updated(tree::observable *obs)
+{
+	auto prop = dynamic_cast<property_base *>(obs);
+	if(prop == nullptr)
+	{
+		return;
+	}
+	updated(prop);
+}
+
+void property_listener::add_property(property_base *p)
+{
+	add_observable(p);
 }
 
 void property_listener::remove_property(property_base *p)
 {
-	std::lock_guard<decltype(mutex)> lock(mutex);
-	if(p == NULL || properties.find(p) == properties.end())
-	{
-		return;
-	}
-	properties.erase(p);
+	remove_observable(p);
 }
