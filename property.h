@@ -19,9 +19,11 @@ public:
 	virtual ~observable()
 	{
 		std::lock_guard<std::recursive_mutex> lock(listeners_mutex);
-		for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+        for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end();)
 		{
-			remove_listener(*it);
+            auto l = *it;
+            it++;
+            remove_listener(l);
 		}
 	}
 
