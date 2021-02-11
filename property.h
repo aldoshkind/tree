@@ -137,7 +137,6 @@ public:
 	virtual void			set_value					(const value_t &value)
 	{
 		sync_value(value);
-		notify_change();
 	}
 
 	virtual void			set_value					(property_base *prop)
@@ -288,10 +287,15 @@ public:
 
 	void					sync_value					(const value_t &v)
 	{
-		value = v;
+        if (value != v)
+        {
+            value = v;
+            notify_change();
+        }
 	}
 
 	using property<value_t>::operator =;
+    using property<value_t>::notify_change;
 };
 
 
