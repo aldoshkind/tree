@@ -259,6 +259,10 @@ tree_node *tree_node::detach(std::string name)
 		(*it)->child_removed(this, child->get_name(), child);
     }
 	
+    if (do_notify_subtree_changes)
+    {
+        notify_parents_child_removed(this, child, child->get_name());
+    }
 	return child;
 }
 
@@ -293,6 +297,11 @@ tree_node *tree_node::detach(tree_node *child)
 			(*it)->child_removed(this, name, child);
 		}
 	}
+
+    if (do_notify_subtree_changes)
+    {
+        notify_parents_child_removed(this, child, child->get_name());
+    }
 	
 	return child;
 }
@@ -561,7 +570,46 @@ void tree_node::notify_parents_child_added(tree_node *parent, tree_node *obj, co
 		auto et = std::chrono::system_clock::now();
 		auto diff = std::chrono::duration<double>(et - bt).count();
 		//printf("%s %s %f\n", __PRETTY_FUNCTION__, name.c_str(), diff);
-	}
+    }
+}
+
+void tree_node::notify_parents_child_removed(tree_node *parent, tree_node *child, const std::string &path)
+{
+    if(do_notify_subtree_changes == false)
+    {
+        return;
+    }
+
+    std::chrono::_V2::system_clock::time_point bt;
+    if(do_print_debug)
+    {
+        bt = std::chrono::system_clock::now();
+    }
+
+    if(owner != nullptr)
+    {
+        owner->subtree_child_removed(parent, child, name + "/" + path);
+    }
+    for(auto pit : parents)
+    {
+        auto &p = pit.first;
+        if(owner == p)
+        {
+            continue;
+        }
+        //auto names = p->get_names_of(this);
+        //for(auto &name : names)
+        {
+            p->subtree_child_removed(parent, child, name + "/" + path);
+        }
+    }
+
+    if(do_print_debug)
+    {
+        auto et = std::chrono::system_clock::now();
+        auto diff = std::chrono::duration<double>(et - bt).count();
+        //printf("%s %s %f\n", __PRETTY_FUNCTION__, name.c_str(), diff);
+    }
 }
 
 void tree_node::subtree_child_added(tree_node *parent, tree_node *child, const std::string &path)
@@ -572,7 +620,17 @@ void tree_node::subtree_child_added(tree_node *parent, tree_node *child, const s
 		(*it)->subtree_child_added(this, parent, child, path);
 	}
 	notify_parents_child_added(parent, child, path);
-	//printf("%s: %s\n", __PRETTY_FUNCTION__, (name + "/" + path).c_str());
+    //printf("%s: %s\n", __PRETTY_FUNCTION__, (name + "/" + path).c_str());
+}
+
+void tree_node::subtree_child_removed(tree_node *parent, tree_node *child, const std::string &path)
+{
+    std::unique_lock<decltype(listeners_mutex)> lock(listeners_mutex);
+    for(typename listeners_t::iterator it = listeners.begin() ; it != listeners.end() ; ++it)
+    {
+        (*it)->subtree_child_removed(this, parent, child, path);
+    }
+    notify_parents_child_added(parent, child, path);
 }
 
 void tree_node::set_notify_subtree_enabled(bool enabled)

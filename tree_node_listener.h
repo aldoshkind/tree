@@ -22,6 +22,12 @@ public:
 									 , tree_node */*newly_added_child*/
 									 , const std::string &/*relative_path*/
 									 ){};
+
+    virtual void subtree_child_removed(tree_node */*reporter*/
+                                     , tree_node */*parent*/
+                                     , tree_node */*newly_added_child*/
+                                     , const std::string &/*relative_path*/
+                                     ){};
 };
 
 
